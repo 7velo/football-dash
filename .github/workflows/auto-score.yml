@@ -1,0 +1,22 @@
+name: 自动更新比赛结果
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch-scores:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python scripts/fetch_scores.py
+      - run: |
+          git config user.name "Auto Score Bot"
+          git config user.email "bot@7velo.github.io"
+          git add data.json
+          git diff --quiet && git diff --staged --quiet || \
+            git commit -m "🤖 自动更新 $(date +'%Y-%m-%d')"
+          git push
