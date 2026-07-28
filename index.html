@@ -58,6 +58,7 @@
       <p class="text-sm text-slate-400 mt-1">飞翔大魔王 · 验证期 · 三阶段计划</p>
     </div>
     <div class="flex gap-2">
+      <button onclick="syncToCloud()" class="btn btn-sm" style="background:#22c55e;color:white;">☁️ 同步</button>
       <button onclick="resetData()" class="btn btn-sm" style="background:#334155;color:#94a3b8;">🔄 重置</button>
       <button onclick="exportData()" class="btn btn-sm" style="background:#334155;color:#94a3b8;">📥 导出</button>
     </div>
@@ -198,6 +199,64 @@
 </div>
 
 <script>
+
+
+// ===== ☁️ 一键同步到云端 =====
+function syncToCloud() {
+  let token = localStorage.getItem('gh_sync_token');
+  if (!token) {
+    token = prompt('请输入 GitHub Token\n(只存本地，一次输入永久有效)\nhttps://github.com/settings/tokens');
+    if (!token) return;
+    localStorage.setItem('gh_sync_token', token);
+  }
+  
+  const btn = document.querySelector('button[onclick*="syncToCloud"]');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ 同步中...';
+  btn.disabled = true;
+  
+  const data = loadData();
+  const json = JSON.stringify(data, null, 2);
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+  
+  // 获取当前data.json的SHA
+  fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
+    headers: {'Authorization': 'token ' + token}
+  })
+  .then(r => r.json())
+  .then(existing => {
+    const sha = existing.sha;
+    // 上传新数据
+    return fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
+      method: 'PUT',
+      headers: {'Authorization': 'token ' + token, 'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        message: '📊 看板同步 ' + new Date().toISOString().slice(0,10),
+        content: b64,
+        sha: sha,
+        branch: 'main'
+      })
+    });
+  })
+  .then(r => {
+    if (r.ok) {
+      btn.textContent = '✅ 已同步';
+      setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+    } else {
+      throw new Error('HTTP ' + r.status);
+    }
+  })
+  .catch(e => {
+    btn.textContent = '❌ 失败';
+    setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
+    if (e.message.includes('401') || e.message.includes('403')) {
+      localStorage.removeItem('gh_sync_token');
+      alert('Token 无效或已过期，请重新生成\nhttps://github.com/settings/tokens');
+    } else {
+      alert('同步失败: ' + e.message);
+    }
+  });
+}
 
 // ===== 云端同步 =====
 function syncToCloud() {
