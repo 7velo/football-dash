@@ -279,9 +279,38 @@ let data = loadData();
 let charts = {};
 
 function loadData() {
+  // 从localStorage读取本地数据
   const raw = localStorage.getItem('fb_dashboard_v2');
-  if (raw) try { return JSON.parse(raw); } catch(e) {}
-  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  let local = null;
+  if (raw) try { local = JSON.parse(raw); } catch(e) {}
+  
+  // 从云端data.json获取(自动更新的比分结果)
+  fetch('data.json?_=' + Date.now())
+    .then(r => r.json())
+    .then(cloud => {
+      // 合并云端数据到localStorage(只合并已出结果的比赛)
+      if (cloud && cloud.tickets) {
+        let merged = local || JSON.parse(JSON.stringify(DEFAULT_DATA));
+        cloud.tickets.forEach(ct => {
+          let existing = merged.tickets.find(t => t.id === ct.id);
+          if (existing) {
+            // 合并每场比赛的结果(云端优先: 如果云端有结果就覆盖)
+            ct.matches.forEach((cm, i) => {
+              if (existing.matches[i] && cm.result !== 'pending') {
+                existing.matches[i].result = cm.result;
+                if (cm.score) existing.matches[i].score = cm.score;
+              }
+            });
+          }
+        });
+        localStorage.setItem('fb_dashboard_v2', JSON.stringify(merged));
+        // 如果当前页面已加载，重新渲染
+        if (typeof render === 'function') render();
+      }
+    })
+    .catch(() => {}); // 离线时忽略
+  
+  return local || JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 function save() { localStorage.setItem('fb_dashboard_v2', JSON.stringify(data)); }
 
