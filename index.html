@@ -201,7 +201,37 @@
 <script>
 
 
-// ===== ☁️ 一键同步到云端 =====
+
+
+// ===== 🔄 自动同步(方案C) =====
+function autoSync() {
+  const token = localStorage.getItem('gh_sync_token');
+  if (!token) return; // 没存token就不自动同步
+  
+  const data = loadData();
+  const json = JSON.stringify(data, null, 2);
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+  
+  fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
+    headers: {'Authorization': 'token ' + token}
+  })
+  .then(r => r.json())
+  .then(existing => {
+    return fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
+      method: 'PUT',
+      headers: {'Authorization': 'token ' + token, 'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        message: '🔄 自动同步 ' + new Date().toISOString().slice(0,10),
+        content: b64,
+        sha: existing.sha,
+        branch: 'main'
+      })
+    });
+  })
+  .catch(() => {}); // 静默失败，不影响用户操作
+}
+
+// ===== ☁️ 一键同步到云 端 =====
 function syncToCloud() {
   let token = localStorage.getItem('gh_sync_token');
   if (!token) {
@@ -716,6 +746,7 @@ function updateMatchResult(ticketId, matchIdx, newResult) {
   if (!ticket || !ticket.matches[matchIdx]) return;
   ticket.matches[matchIdx].result = newResult;
   render();
+  setTimeout(autoSync, 500);
 }
 
 // 实时更新比分
@@ -738,6 +769,7 @@ function updateMatchScore(ticketId, matchIdx, newScore) {
     }
   }
   render();
+  setTimeout(autoSync, 500);
 }
 
 function autoResizeInput(el) {
@@ -939,6 +971,7 @@ function addBet() {
   document.querySelectorAll('.mHome,.mAway,.mOdds,.mScore,.mLeague').forEach(el => el.value = '');
   document.querySelectorAll('.mResult').forEach(el => el.value = 'pending');
   render();
+  setTimeout(autoSync, 500);
 }
 
 function showMsg(msg, ok) {
