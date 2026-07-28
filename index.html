@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>飞翔大魔王 · 竞彩看板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+  * { font-family: 'Noto Sans SC', sans-serif; }
+  body { background: #0f172a; color: #e2e8f0; }
+  .card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; padding: 20px; }
+  .stat-value { font-size: 28px; font-weight: 900; }
+  .stat-label { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+  .win { color: #22c55e; }
+  .lose { color: #ef4444; }
+  .neutral { color: #f59e0b; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .chip-win { background: #22c55e22; color: #22c55e; border: 1px solid #22c55e44; }
+  .chip-lose { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
+  .chip-pending { background: #f59e0b22; color: #f59e0b; border: 1px solid #f59e0b44; }
+  .btn { padding: 8px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: #3b82f6; color: white; border: none; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-sm { padding: 4px 12px; font-size: 13px; }
+  .input-field { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; color: #e2e8f0; width: 100%; outline: none; }
+  .input-field:focus { border-color: #3b82f6; }
+  .table-header { background: #334155; color: #94a3b8; font-size: 12px; font-weight: 600; padding: 10px 12px; }
+  .table-cell { padding: 8px 12px; border-bottom: 1px solid #1e293b; font-size: 14px; }
+  .progress-bar { height: 8px; border-radius: 999px; background: #334155; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #1e293b; }
+  ::-webkit-scrollbar-thumb { background: #475569; border-radius: 999px; }
+  @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 8px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 20px rgba(34,197,94,0.6); } }
+  .today-win { animation: pulse-glow 2s infinite; }
+  .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: transparent; color: #94a3b8; }
+  .tab-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+  .tab-btn:hover:not(.active) { background: #334155; }
+  .hidden { display: none; }
+  .match-box { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px; }
+  .match-box h4 { color: #60a5fa; font-weight: 600; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .match-box h4 .badge { background: #3b82f622; color: #60a5fa; font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid #3b82f644; }
+  .ticket-group { background: #0f172a; border-radius: 10px; overflow: hidden; }
+  .ticket-row:not(:last-child) { border-bottom: 2px dashed #334155; }
+  .ticket-header { background: #1e293b; padding: 6px 12px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+
+<div class="max-w-7xl mx-auto px-4 py-6">
+
+  <!-- 标题 -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-black text-white">⚽ 竞彩投资看板</h1>
+      <p class="text-sm text-slate-400 mt-1">飞翔大魔王 · 验证期 · 三阶段计划</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="resetData()" class="btn btn-sm" style="background:#334155;color:#94a3b8;">🔄 重置</button>
+      <button onclick="exportData()" class="btn btn-sm" style="background:#334155;color:#94a3b8;">📥 导出</button>
+    </div>
+  </div>
+
+  <!-- 总览卡片 -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+    <div class="card text-center">
+      <div class="stat-label">💰 起始本金</div>
+      <div class="stat-value" style="color:#60a5fa;" id="cardCapital">500</div>
+    </div>
+    <div class="card text-center today-win">
+      <div class="stat-label">🟢 当前可用</div>
+      <div class="stat-value win" id="cardAvailable">0</div>
+    </div>
+    <div class="card text-center">
+      <div class="stat-label">📊 累计盈亏</div>
+      <div class="stat-value" id="cardPnl">0</div>
+    </div>
+    <div class="card text-center">
+      <div class="stat-label">🔥 今日战绩</div>
+      <div class="stat-value" id="cardToday">0</div>
+    </div>
+    <div class="card text-center">
+      <div class="stat-label">🎯 串关命中率</div>
+      <div class="stat-value" id="cardWinRate">0%</div>
+    </div>
+    <div class="card text-center">
+      <div class="stat-label">📋 单场命中率</div>
+      <div class="stat-value" id="cardSingleRate">0%</div>
+    </div>
+  </div>
+
+  <!-- 回本进度 -->
+  <div class="card mb-6">
+    <div class="flex justify-between text-sm mb-2">
+      <span class="text-slate-400">📈 回本进度</span>
+      <span id="recoveryText" class="font-bold"></span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="recoveryBar" style="width:0%;background:linear-gradient(90deg,#22c55e,#16a34a);"></div>
+    </div>
+    <div class="flex justify-between text-xs text-slate-500 mt-1">
+      <span>可用: <span id="recoveryAvailable">0</span> 元</span>
+      <span>目标: 回本 → 盈利</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-4 flex-wrap">
+    <button class="tab-btn active" onclick="switchTab('dashboard',this)">📊 总览</button>
+    <button class="tab-btn" onclick="switchTab('records',this)">📋 记录</button>
+    <button class="tab-btn" onclick="switchTab('analysis',this)">🔍 分析</button>
+    <button class="tab-btn" onclick="switchTab('plan',this)">🎯 计划</button>
+    <button class="tab-btn" onclick="switchTab('add',this)">➕ 添加</button>
+  </div>
+
+  <!-- TAB: 总览 -->
+  <div id="tab-dashboard" class="tab-content">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card"><canvas id="pnlChart" height="280"></canvas></div>
+      <div class="card"><canvas id="typeChart" height="280"></canvas></div>
+      <div class="card lg:col-span-2"><canvas id="leagueChart" height="200"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TAB: 记录（按票分组） -->
+  <div id="tab-records" class="tab-content hidden">
+    <div class="card overflow-x-auto p-0">
+      <div id="recordsContainer"></div>
+    </div>
+  </div>
+
+  <!-- TAB: 分析 -->
+  <div id="tab-analysis" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card"><canvas id="pickChart" height="240"></canvas></div>
+      <div class="card"><canvas id="pickPnlChart" height="240"></canvas></div>
+      <div class="card"><canvas id="trendChart" height="240"></canvas></div>
+      <div class="card">
+        <div class="stat-label mb-3">💡 关键发现</div>
+        <div id="insights" class="space-y-3 text-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 计划 -->
+  <div id="tab-plan" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="card lg:col-span-2">
+        <div class="stat-label mb-3">📅 三阶段计划</div>
+        <div id="phasePlan" class="space-y-4"></div>
+      </div>
+      <div class="card">
+        <div class="stat-label mb-3">🎯 目标追踪</div>
+        <div id="goalTracking" class="space-y-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 添加 -->
+  <div id="tab-add" class="tab-content hidden">
+    <div class="card max-w-3xl">
+      <div class="stat-label mb-4">➕ 添加新投注</div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">日期</label>
+          <input class="input-field" id="fDate" type="date">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">串关类型</label>
+          <select class="input-field" id="fType" onchange="rebuildMatchFields()">
+            <option value="单场固定">单场固定</option>
+            <option value="2x1" selected>2x1</option>
+            <option value="3x1">3x1</option>
+            <option value="4x1">4x1</option>
+            <option value="5x1">5x1</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">倍数</label>
+          <input class="input-field" id="fMul" type="number" min="1" value="1">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">本单金额</label>
+          <div class="input-field" id="fStakeDisplay" style="display:flex;align-items:center;font-weight:700;color:#22c55e;">0 元</div>
+          <input type="hidden" id="fStake" value="0">
+        </div>
+      </div>
+      <div id="matchFieldsContainer" class="space-y-3 mb-4"></div>
+      <div class="flex gap-3">
+        <button onclick="addBet()" class="btn btn-primary">➕ 添加此单</button>
+        <span id="stakeHint" class="text-xs text-slate-500 self-center"></span>
+      </div>
+      <div id="addMsg" class="mt-3 text-sm hidden"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_DATA = {
+  capital: 500,
+  tickets: [
+    { id:1, date:'2026-07-21', type:'2x1', multi:2, stake:4, matches:[
+      {home:'萨巴赫', away:'库奥皮奥', pick:'平', odds:4.10, score:'1-0', result:'lose', league:'欧冠'},
+      {home:'格拉茨风暴', away:'哈茨', pick:'胜', odds:1.63, score:'4-0', result:'win', league:'欧冠'}
+    ]},
+    { id:2, date:'2026-07-21', type:'2x1', multi:1, stake:4, matches:[
+      {home:'萨巴赫', away:'库奥皮奥', pick:'胜或平', odds:1.44, score:'1-0', result:'win', league:'欧冠'},
+      {home:'奥胡斯', away:'波兹南莱赫', pick:'平', odds:2.95, score:'1-4', result:'lose', league:'欧冠'}
+    ]},
+    { id:3, date:'2026-07-21', type:'2x1', multi:2, stake:4, matches:[
+      {home:'格拉茨风暴', away:'哈茨', pick:'胜', odds:1.63, score:'4-0', result:'win', league:'欧冠'},
+      {home:'奥胡斯', away:'波兹南莱赫', pick:'平', odds:2.95, score:'1-4', result:'lose', league:'欧冠'}
+    ]},
+    { id:4, date:'2026-07-21', type:'3x1', multi:1, stake:2, matches:[
+      {home:'萨巴赫', away:'库奥皮奥', pick:'平', odds:4.10, score:'1-0', result:'lose', league:'欧冠'},
+      {home:'奥胡斯', away:'波兹南莱赫', pick:'平', odds:2.95, score:'1-4', result:'lose', league:'欧冠'},
+      {home:'格拉茨风暴', away:'哈茨', pick:'平', odds:3.65, score:'4-0', result:'lose', league:'欧冠'}
+    ]},
+    { id:5, date:'2026-07-22', type:'单场固定', multi:6, stake:12, matches:[
+      {home:'首尔FC', away:'浦项制铁', pick:'平', odds:3.25, score:'3-1', result:'lose', league:'K联赛'}
+    ]},
+    { id:6, date:'2026-07-22', type:'2x1', multi:3, stake:6, matches:[
+      {home:'雅罗', away:'塞伊奈约基', pick:'平', odds:3.45, score:'2-1', result:'lose', league:'芬兰超'},
+      {home:'韦斯特罗斯', away:'厄尔格里特', pick:'胜', odds:1.49, score:'2-0', result:'win', league:'瑞典超'}
+    ]},
+    { id:7, date:'2026-07-22', type:'2x1', multi:6, stake:12, matches:[
+      {home:'雅罗', away:'塞伊奈约基', pick:'平', odds:3.45, score:'2-1', result:'lose', league:'芬兰超'},
+      {home:'韦斯特罗斯', away:'厄尔格里特', pick:'平', odds:3.95, score:'2-0', result:'lose', league:'瑞典超'}
+    ]},
+    { id:8, date:'2026-07-23', type:'4x1', multi:3, stake:12, matches:[
+      {home:'圣加仑', away:'本菲卡', pick:'负', odds:1.23, score:'2-1', result:'lose', league:'欧冠'},
+      {home:'哈马比', away:'安德莱赫特', pick:'胜或平', odds:3.40, score:'1-1', result:'win', league:'欧冠'},
+      {home:'特温特', away:'费伦茨瓦罗斯', pick:'胜', odds:1.38, score:'1-2', result:'lose', league:'欧冠'},
+      {home:'斯普利特海杜克', away:'帕福斯', pick:'胜', odds:1.78, score:'2-0', result:'win', league:'欧冠'}
+    ]},
+    { id:9, date:'2026-07-23', type:'3x1', multi:3, stake:12, matches:[
+      {home:'利勒斯特罗姆', away:'维京', pick:'负', odds:1.93, score:'1-2', result:'win', league:'挪超'},
+      {home:'沙佩科恩斯', away:'弗拉门戈', pick:'负', odds:1.29, score:'0-4', result:'win', league:'巴甲'},
+      {home:'奥莫尼亚', away:'阿拉木图凯拉特', pick:'胜或平', odds:1.56, score:'1-0', result:'win', league:'欧冠'}
+    ]},
+    { id:10, date:'2026-07-23', type:'2x1', multi:1, stake:2, matches:[
+      {home:'迈阿密国际', away:'芝加哥火焰', pick:'平', odds:3.60, score:'3-2', result:'lose', league:'美职联'},
+      {home:'奥莫尼亚', away:'阿拉木图凯拉特', pick:'平', odds:3.60, score:'1-0', result:'lose', league:'欧冠'}
+    ]},
+    { id:11, date:'2026-07-23', type:'2x1', multi:3, stake:6, matches:[
+      {home:'韦斯特罗斯', away:'厄尔格里特', pick:'平', odds:3.95, score:'2-0', result:'lose', league:'瑞典超'},
+      {home:'雅罗', away:'塞伊奈约基', pick:'负', odds:1.90, score:'2-1', result:'lose', league:'芬兰超'}
+    ]},
+    { id:12, date:'2026-07-24', type:'5x1', multi:5, stake:10, matches:[
+      {home:'弗拉门戈', away:'圣保罗', pick:'胜', odds:1.32, score:'1-1', result:'lose', league:'巴甲'},
+      {home:'奥勒松', away:'维京', pick:'负', odds:1.35, score:'1-1', result:'lose', league:'挪超'},
+      {home:'哥德堡盖斯', away:'哈尔姆斯塔德', pick:'胜', odds:1.32, score:'1-1', result:'lose', league:'瑞典超'},
+      {home:'桑纳菲尤尔', away:'博德闪耀', pick:'负', odds:1.18, score:'0-3', result:'win', league:'挪超'},
+      {home:'格雷米奥', away:'弗鲁米嫩塞', pick:'负', odds:2.37, score:'1-1', result:'lose', league:'巴甲'}
+    ]},
+    { id:13, date:'2026-07-24', type:'4x1', multi:3, stake:12, matches:[
+      {home:'玛丽港', away:'AC奥卢', pick:'负', odds:1.34, score:'1-1', result:'lose', league:'芬兰超'},
+      {home:'库奥皮奥', away:'瓦萨', pick:'胜', odds:1.90, score:'3-1', result:'win', league:'芬兰超'},
+      {home:'克里斯蒂安松', away:'斯达', pick:'胜或平', odds:1.86, score:'1-2', result:'lose', league:'挪超'},
+      {home:'代格福什', away:'佐加顿斯', pick:'负', odds:1.49, score:'0-1', result:'win', league:'瑞典超'}
+    ]},
+    { id:14, date:'2026-07-24', type:'单场固定', multi:6, stake:12, matches:[
+      {home:'浦项制铁', away:'全北现代', pick:'胜', odds:2.85, score:'0-2', result:'lose', league:'K联赛'}
+    ]},
+    { id:15, date:'2026-07-27', type:'2x1', multi:3, stake:12, matches:[
+      {home:'罗森博格', away:'腓特烈斯塔', pick:'胜', odds:1.10, score:'4-0', result:'win', league:'挪超'},
+      {home:'赫根', away:'AIK索尔纳', pick:'平', odds:4.40, score:'0-0', result:'win', league:'瑞典超'}
+    ]},
+    { id:16, date:'2026-07-27', type:'比分2串1', multi:1, stake:2, matches:[
+      {home:'罗森博格', away:'腓特烈斯塔', pick:'2:0', odds:6.00, score:'4-0', result:'lose', league:'挪超'},
+      {home:'赫根', away:'AIK索尔纳', pick:'1:1', odds:8.00, score:'0-0', result:'lose', league:'瑞典超'}
+    ]}
+  ]
+};
+
+let data = loadData();
+let charts = {};
+
+function loadData() {
+  const raw = localStorage.getItem('fb_dashboard_v2');
+  if (raw) try { return JSON.parse(raw); } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+function save() { localStorage.setItem('fb_dashboard_v2', JSON.stringify(data)); }
+
+// ================================================================
+// 动态表单
+// ================================================================
+function rebuildMatchFields() {
+  const type = document.getElementById('fType').value;
+  const count = type === '单场固定' ? 1 : type === '2x1' ? 2 : type === '3x1' ? 3 : type === '4x1' ? 4 : 5;
+  const container = document.getElementById('matchFieldsContainer');
+  container.innerHTML = '';
+  for (let i = 1; i <= count; i++) {
+    const div = document.createElement('div');
+    div.className = 'match-box';
+    div.innerHTML = `
+      <h4>⚽ 第 ${i} 场 <span class="badge">${type === '单场固定' ? '单场' : '串关'}</span></h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div><label class="text-xs text-slate-400 block mb-1">主队</label><input class="input-field mHome" placeholder="主队"></div>
+        <div><label class="text-xs text-slate-400 block mb-1">客队</label><input class="input-field mAway" placeholder="客队"></div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">选项</label>
+          <select class="input-field mPick" onchange="toggleOdds2(this);autoCalcStake()">
+            <option value="胜">胜</option>
+            <option value="平">平</option>
+            <option value="负">负</option>
+            <option value="胜或平">胜或平</option>
+            <option value="平或负">平或负</option>
+            <option value="胜或负">胜或负</option>
+          </select>
+        </div>
+        <div><label class="text-xs text-slate-400 block mb-1 odds1-label">赔率</label><input class="input-field mOdds" type="number" step="0.01" min="1" placeholder="2.85" onchange="autoCalcStake()" oninput="autoCalcStake()"></div>
+        <div class="odds2-wrap" style="display:none;">
+          <label class="text-xs text-slate-400 block mb-1 odds2-label">赔率二</label>
+          <input class="input-field mOdds2" type="number" step="0.01" min="1" placeholder="赔率2" onchange="autoCalcStake()" oninput="autoCalcStake()">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">赛果</label>
+          <select class="input-field mResult">
+            <option value="pending">⏳ 待赛</option>
+            <option value="win">✅ 中</option>
+            <option value="lose">❌ 不中</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">比分(选填)</label>
+          <input class="input-field mScore" placeholder="3-1">
+        </div>
+        <div><label class="text-xs text-slate-400 block mb-1">联赛</label><input class="input-field mLeague" placeholder="挪超"></div>
+      </div>`;
+    container.appendChild(div);
+  }
+  // 初始化双选赔率显示
+  document.querySelectorAll('.mPick').forEach(p => toggleOdds2(p));
+  autoCalcStake();
+}
+
+function toggleOdds2(pickEl) {
+  const wrap = pickEl.closest('.match-box').querySelector('.odds2-wrap');
+  if (wrap) {
+    wrap.style.display = pickEl.value.includes('或') ? '' : 'none';
+  }
+}
+
+function autoCalcStake() {
+  const type = document.getElementById('fType').value;
+  const multi = parseInt(document.getElementById('fMul').value) || 1;
+  const picks = document.querySelectorAll('.mPick');
+  let combos = 1;
+  picks.forEach(p => { if (p.value.includes('或')) combos *= 2; });
+  const total = 2 * multi * combos;
+  document.getElementById('fStake').value = total;
+  document.getElementById('fStakeDisplay').textContent = total + ' 元';
+  document.getElementById('stakeHint').textContent = total > 0
+    ? `${multi}倍 × ${combos}组合 × 2元`
+    : '';
+  // 同时更新赔率标签
+  updateOddsLabels();
+}
+
+function updateOddsLabels() {
+  document.querySelectorAll('.match-box').forEach(box => {
+    const pick = box.querySelector('.mPick')?.value || '';
+    const odds1Label = box.querySelector('.odds1-label');
+    const odds2Label = box.querySelector('.odds2-label');
+    if (odds1Label) {
+      if (!pick.includes('或')) {
+        odds1Label.textContent = pick + '赔率';
+      } else {
+        const picks = pick.split('或');
+        odds1Label.textContent = picks[0] + '赔率';
+      }
+    }
+    if (odds2Label) {
+      const picks = pick.split('或');
+      odds2Label.textContent = picks[1] + '赔率';
+    }
+  });
+}
+
+// 倍数变更也触发重算
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fMul').addEventListener('change', autoCalcStake);
+  document.getElementById('fMul').addEventListener('input', autoCalcStake);
+});
+
+// ================================================================
+// 核心计算
+// ================================================================
+function analyze() {
+  const tickets = data.tickets;
+  let totalStake = 0, totalPayout = 0;
+  let histStake = 0, histPayout = 0;
+  let todayStake = 0, todayPayout = 0;
+  let wonTickets = 0, winPicks = 0, totalPicks = 0;
+  const leagues = {}, picks = {}, types = {};
+  const series = [];
+  let cum = 0;
+  const dates = tickets.map(t=>t.date).sort();
+  const latestDate = dates[dates.length-1] || '';
+
+  tickets.forEach(t => {
+    const hasPending = t.matches.some(m => m.result === 'pending');
+    const allWin = t.matches.every(m => m.result === 'win');
+    const payout = hasPending ? 0 : calcPayout(t, allWin);
+    
+    // 待赛的票只记投入，不算盈亏
+    totalStake += t.stake;
+    if (!hasPending) totalPayout += payout;
+    
+    if (t.date === latestDate) {
+      todayStake += t.stake;
+      if (!hasPending) todayPayout += payout;
+    } else {
+      if (!hasPending) { histStake += t.stake; histPayout += payout; }
+    }
+    
+    if (allWin && !hasPending) wonTickets++;
+
+    if (!types[t.type]) types[t.type] = { n:0, w:0, stake:0, payout:0 };
+    types[t.type].n++;
+    if (allWin && !hasPending) { types[t.type].w++; types[t.type].payout += payout; }
+    types[t.type].stake += t.stake;
+
+    t.matches.forEach(m => {
+      totalPicks++;
+      if (m.result === 'win') winPicks++;
+      const pk = m.pick.includes('或') ? '双选' : m.pick;
+      if (!picks[pk]) picks[pk] = { n:0, w:0, stake:0, payout:0 };
+      picks[pk].n++; if (m.result === 'win') picks[pk].w++;
+      picks[pk].stake += t.stake / t.matches.length;
+      if (allWin && !hasPending) picks[pk].payout += payout / t.matches.length;
+      const lg = m.league || '其他';
+      if (!leagues[lg]) leagues[lg] = { n:0, w:0, stake:0, payout:0 };
+      leagues[lg].n++; if (m.result === 'win') leagues[lg].w++;
+      leagues[lg].stake += t.stake / t.matches.length;
+      if (allWin && !hasPending) leagues[lg].payout += payout / t.matches.length;
+    });
+    if (!hasPending) {
+      cum += payout - t.stake;
+      series.push({ label: `#${t.id}`, cum: Math.round(cum*100)/100, date: t.date });
+    }
+  });
+
+  const pnl = totalPayout - totalStake;
+  // 去掉待赛票的投入，算"已结算"盈亏
+  const pendingStakeAll = tickets.filter(t => t.matches.some(m => m.result === 'pending')).reduce((s,t) => s + t.stake, 0);
+  const settledPnl = totalPayout - (totalStake - pendingStakeAll);
+  return {
+    tickets, totalStake, totalPayout, pnl, available: data.capital + pnl,
+    settledPnl, settledAvailable: data.capital + settledPnl, pendingStakeAll,
+    histStake, histPayout, todayStake, todayPayout, todayPnl: todayPayout - todayStake,
+    wonTickets, totalTickets: tickets.length,
+    ticketRate: tickets.length ? wonTickets/tickets.length : 0,
+    winPicks, totalPicks, pickRate: totalPicks ? winPicks/totalPicks : 0,
+    leagues, picks, types, series, latestDate
+  };
+}
+
+function calcPayout(t, w) {
+  if (!w) return 0;
+  if (t.type === '单场固定') return Math.round(t.matches[0].odds * 2 * t.multi);
+  const prod = t.matches.reduce((s,m) => s * m.odds, 1);
+  return Math.round(prod * 2 * t.multi);
+}
+
+// ================================================================
+// 渲染
+// ================================================================
+function render() {
+  const s = analyze();
+  document.getElementById('cardCapital').textContent = data.capital;
+  document.getElementById('cardAvailable').textContent = Math.round(s.settledAvailable);
+  const pnlEl = document.getElementById('cardPnl');
+  pnlEl.textContent = (s.settledPnl >= 0 ? '+' : '') + Math.round(s.settledPnl*100)/100;
+  pnlEl.className = 'stat-value ' + (s.settledPnl >= 0 ? 'win' : 'lose');
+  // 今日战绩：显示最近已结算日期的结果
+  const todayPending = s.tickets.filter(t => t.date === s.latestDate && t.matches.some(m => m.result === 'pending'));
+  const todayPendingStake = todayPending.reduce((st, t) => st + t.stake, 0);
+  // 找最近有已结算结果的日期
+  let settledDate = s.latestDate;
+  if (todayPendingStake > 0) {
+    // 如果最新日期全是待赛，往前找有结果的日期
+    const settledTickets = s.tickets.filter(t => !t.matches.some(m => m.result === 'pending'));
+    if (settledTickets.length > 0) {
+      const dates = [...new Set(settledTickets.map(t=>t.date))].sort();
+      settledDate = dates[dates.length-1];
+    }
+  }
+  // 重新计算选定日期的已结算盈亏
+  const dayTickets = s.tickets.filter(t => t.date === settledDate && !t.matches.some(m => m.result === 'pending'));
+  const dayStake = dayTickets.reduce((st,t) => st + t.stake, 0);
+  const dayPayout = dayTickets.reduce((st,t) => st + (t.matches.every(m=>m.result==='win') ? calcPayout(t,true) : 0), 0);
+  const dayPnl = dayPayout - dayStake;
+  
+  const tEl = document.getElementById('cardToday');
+  if (s.pendingStakeAll > 0) {
+    tEl.innerHTML = (dayPnl >= 0 ? '+' : '') + Math.round(dayPnl) + '元'
+      + '<span style="font-size:11px;display:block;color:#94a3b8;">' + settledDate + '结算</span>'
+      + '<span style="font-size:12px;display:block;color:#f59e0b;">待赛' + s.pendingStakeAll + '元</span>';
+  } else {
+    tEl.textContent = (dayPnl >= 0 ? '+' : '') + Math.round(dayPnl);
+  }
+  tEl.className = 'stat-value ' + (dayPnl >= 0 ? 'win' : 'lose');
+  document.getElementById('cardWinRate').textContent = (s.ticketRate * 100).toFixed(0) + '%';
+  document.getElementById('cardSingleRate').textContent = (s.pickRate * 100).toFixed(0) + '%';
+
+  const loss = Math.abs(s.settledPnl);
+  document.getElementById('recoveryText').textContent = loss > 0 ? `已亏 ${Math.round(loss)} 元 · 还需 ${Math.round(loss)} 元回本` : '已回本! 🎉';
+  document.getElementById('recoveryBar').style.width = Math.max(0, Math.min(100, (1-loss/87)*100)) + '%';
+  document.getElementById('recoveryAvailable').textContent = Math.round(s.settledAvailable);
+
+  renderRecords(s);
+  renderCharts(s);
+  renderAnalysis(s);
+  renderPlan(s);
+  save();
+}
+
+// ===================== 记录表（按票分组） =====================
+function renderRecords(s) {
+  const sorted = [...s.tickets].sort((a,b) => b.date.localeCompare(a.date) || b.id - a.id);
+  const container = document.getElementById('recordsContainer');
+  
+  container.innerHTML = sorted.map(t => {
+    const allWin = t.matches.every(m => m.result === 'win');
+    const hasPending = t.matches.some(m => m.result === 'pending');
+    const payout = allWin ? calcPayout(t, true) : 0;
+    const pnl = payout - t.stake;
+    
+    let ticketStatus, ticketColor;
+    if (hasPending) { ticketStatus = '⏳ 待赛'; ticketColor = 'chip-pending'; }
+    else if (allWin) { ticketStatus = `✅ 全中 奖金${payout}元`; ticketColor = 'chip-win'; }
+    else { ticketStatus = '❌ 未中'; ticketColor = 'chip-lose'; }
+    
+    const matchesHtml = t.matches.map((m, mi) => {
+      const resultIcon = m.result === 'win' ? '✅' : m.result === 'lose' ? '❌' : '⏳';
+      const pickType = m.pick.includes('或') ? '双选' : m.pick;
+      const score = m.score && m.score !== '' ? m.score : '-';
+      return `<div class="flex items-center justify-between py-2 px-4 text-sm hover:bg-slate-800/30 ticket-row">
+        <div class="flex-1">
+          <span class="text-slate-300">${m.home}</span>
+          <span class="text-slate-500 mx-1">vs</span>
+          <span class="text-slate-300">${m.away}</span>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <input class="input-field" style="width:52px;padding:2px 6px;font-size:12px;text-align:center;font-family:monospace;" value="${m.score||''}" placeholder="-" onchange="updateMatchScore(${t.id},${mi},this.value)" oninput="autoResizeInput(this)">
+          <span class="chip ${m.result === 'win' ? 'chip-win' : m.result === 'lose' ? 'chip-lose' : 'chip-pending'}">${pickType} ${m.odds2 ? m.odds+'/'+m.odds2 : '@'+m.odds}</span>
+          <select class="input-field result-select" style="padding:2px 6px;font-size:12px;width:auto;" onchange="updateMatchResult(${t.id},${mi},this.value)">
+            <option value="pending" ${m.result==='pending'?'selected':''}>⏳待赛</option>
+            <option value="win" ${m.result==='win'?'selected':''}>✅中</option>
+            <option value="lose" ${m.result==='lose'?'selected':''}>❌错</option>
+          </select>
+          <span class="text-slate-500 w-14 text-right">${m.league||''}</span>
+        </div>
+      </div>`;
+    }).join('');
+    
+    return `<div class="ticket-group mb-2">
+      <div class="ticket-header">
+        <div class="flex items-center gap-3">
+          <span class="font-bold text-slate-300">#${t.id}</span>
+          <span class="text-slate-500">${t.date}</span>
+          <span class="chip" style="background:#334155;color:#94a3b8;">${t.type}</span>
+          <span class="text-slate-500">${t.stake}元</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="chip ${ticketColor}">${ticketStatus}</span>
+          <span class="${pnl >= 0 ? 'win' : 'lose'} font-bold">${pnl >= 0 ? '+' : ''}${pnl}元</span>
+        </div>
+      </div>
+      ${matchesHtml}
+    </div>`;
+  }).join('');
+}
+
+// 实时更新赛果
+function updateMatchResult(ticketId, matchIdx, newResult) {
+  const ticket = data.tickets.find(t => t.id === ticketId);
+  if (!ticket || !ticket.matches[matchIdx]) return;
+  ticket.matches[matchIdx].result = newResult;
+  render();
+}
+
+// 实时更新比分
+function updateMatchScore(ticketId, matchIdx, newScore) {
+  const ticket = data.tickets.find(t => t.id === ticketId);
+  if (!ticket || !ticket.matches[matchIdx]) return;
+  ticket.matches[matchIdx].score = newScore;
+  // 比分变了自动判断结果
+  const m = ticket.matches[matchIdx];
+  if (newScore && newScore.includes('-')) {
+    const parts = newScore.split('-');
+    const h = parseInt(parts[0]), a = parseInt(parts[1]);
+    if (!isNaN(h) && !isNaN(a)) {
+      const actual = h > a ? '胜' : h < a ? '负' : '平';
+      if (m.pick === actual || (m.pick.includes('或') && m.pick.split('或').includes(actual))) {
+        m.result = 'win';
+      } else {
+        m.result = 'lose';
+      }
+    }
+  }
+  render();
+}
+
+function autoResizeInput(el) {
+  el.style.width = Math.max(40, Math.min(70, (el.value.length || 1) * 10 + 10)) + 'px';
+}
+
+// ===================== 图表 =====================
+function renderCharts(s) {
+  const opts = { responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#94a3b8' } } },
+    scales: { x: { ticks: { color: '#64748b' } }, y: { ticks: { color: '#64748b' } } } };
+  const lastPnl = s.series.length ? s.series[s.series.length-1].cum : 0;
+
+  if (charts.pnl) charts.pnl.destroy();
+  charts.pnl = new Chart(document.getElementById('pnlChart'), {
+    type: 'line', data: {
+      labels: s.series.map(x=>x.label),
+      datasets: [{ label:'累计盈亏', data: s.series.map(x=>x.cum),
+        borderColor: lastPnl>=0?'#22c55e':'#ef4444', tension: 0.3,
+        pointBackgroundColor: s.series.map(x=>x.cum>=0?'#22c55e':'#ef4444'), pointRadius: 3,
+        fill: true, backgroundColor: (lastPnl>=0?'#22c55e':'#ef4444')+'11' }]
+    }, options: { ...opts, plugins: { ...opts.plugins, legend: { display: false } } }
+  });
+
+  if (charts.type) charts.type.destroy();
+  const tl = Object.keys(s.types);
+  charts.type = new Chart(document.getElementById('typeChart'), {
+    type: 'bar', data: {
+      labels: tl,
+      datasets: [
+        { label:'中', data: tl.map(t=>s.types[t].w), backgroundColor:'#22c55e', borderRadius:4 },
+        { label:'未中', data: tl.map(t=>s.types[t].n-s.types[t].w), backgroundColor:'#ef4444', borderRadius:4 }
+      ]
+    }, options: { ...opts, plugins: { ...opts.plugins, title: { display:true, text:'📊 投注方式', color:'#e2e8f0' } },
+      scales: { x: { stacked:true }, y: { stacked:true } } }
+  });
+
+  if (charts.league) charts.league.destroy();
+  const ll = Object.keys(s.leagues);
+  const lp = ll.map(l => Math.round((s.leagues[l].payout-s.leagues[l].stake)*100)/100);
+  charts.league = new Chart(document.getElementById('leagueChart'), {
+    type: 'bar', data: {
+      labels: ll,
+      datasets: [{ label:'净盈亏', data: lp,
+        backgroundColor: lp.map(v=>v>=0?'#22c55e88':'#ef444488'),
+        borderColor: lp.map(v=>v>=0?'#22c55e':'#ef4444'), borderWidth: 1, borderRadius: 4 }]
+    }, options: { ...opts, plugins: { ...opts.plugins, title: { display:true, text:'🏆 联赛盈亏', color:'#e2e8f0' }, legend: { display:false } }, indexAxis: 'y' }
+  });
+}
+
+function renderAnalysis(s) {
+  if (charts.pick) charts.pick.destroy();
+  const pl = Object.keys(s.picks);
+  charts.pick = new Chart(document.getElementById('pickChart'), {
+    type: 'doughnut', data: {
+      labels: pl.map(p=>`${p} (${s.picks[p].n}次)`),
+      datasets: [{ data: pl.map(p=>s.picks[p].n), backgroundColor:['#3b82f6','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'], borderWidth:0 }]
+    }, options: { responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { position:'right', labels:{ color:'#94a3b8' } }, title: { display:true, text:'🎯 选项分布', color:'#e2e8f0' } } }
+  });
+
+  if (charts.pickPnl) charts.pickPnl.destroy();
+  const pp = pl.map(p => Math.round((s.picks[p].payout-s.picks[p].stake)*100)/100);
+  charts.pickPnl = new Chart(document.getElementById('pickPnlChart'), {
+    type: 'bar', data: {
+      labels: pl,
+      datasets: [{ label:'盈亏', data: pp,
+        backgroundColor: pp.map(v=>v>=0?'#22c55e88':'#ef444488'),
+        borderColor: pp.map(v=>v>=0?'#22c55e':'#ef4444'), borderWidth:1, borderRadius:4 }]
+    }, options: { responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { display:false }, title: { display:true, text:'💰 选项盈亏', color:'#e2e8f0' } },
+      scales: { y:{ ticks:{ color:'#64748b' } }, x:{ ticks:{ color:'#94a3b8' } } } }
+  });
+
+  if (charts.trend) charts.trend.destroy();
+  const tw=5, tr=[], ttl=[];
+  s.tickets.forEach((t,i) => {
+    const st = Math.max(0,i-tw+1);
+    tr.push(Math.round(s.tickets.slice(st,i+1).filter(x=>x.matches.every(m=>m.result==='win')).length/(i-st+1)*100));
+    ttl.push(`#${t.id}`);
+  });
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type: 'line', data: {
+      labels: ttl,
+      datasets: [{ label:'近5票命中率', data: tr, borderColor:'#f59e0b', backgroundColor:'#f59e0b22', fill:true, tension:0.3, pointRadius:3 }]
+    }, options: { responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { labels:{ color:'#94a3b8' } }, title: { display:true, text:'📈 滚动命中率', color:'#e2e8f0' } },
+      scales: { y:{ min:0, max:100, ticks:{ callback:v=>v+'%' } }, x:{ ticks:{ color:'#64748b' } } } }
+  });
+
+  const allM = s.tickets.flatMap(t=>t.matches);
+  const flatBets = allM.filter(m => m.pick === '平');
+  const flatRate = flatBets.length ? Math.round(flatBets.filter(m=>m.result==='win').length/flatBets.length*100) : 0;
+  const dub = allM.filter(m => m.pick.includes('或'));
+  const dubRate = dub.length ? Math.round(dub.filter(m=>m.result==='win').length/dub.length*100) : 0;
+  let bestL='', bestV=-999;
+  Object.keys(s.leagues).forEach(l => { const v=s.leagues[l].payout-s.leagues[l].stake; if(v>bestV&&s.leagues[l].n>=2){bestV=v;bestL=l;} });
+
+  document.getElementById('insights').innerHTML = [
+    { i:'🤔', t:`选平${flatBets.length}次中${flatBets.filter(m=>m.result==='win').length}次`, d:`平局命中率 ${flatRate}%` },
+    { i:'💡', t:`双选${dub.length}次中${dub.filter(m=>m.result==='win').length}次`, d:`双选命中率 ${dubRate}%` },
+    { i:'🏆', t: bestL ? `最佳联赛: ${bestL}` : '数据不足', d: bestL ? `盈亏 ${Math.round(bestV)} 元` : '' },
+    { i:'📉', t:`串关 ${s.wonTickets}/${s.totalTickets} 中`, d:`命中率 ${(s.ticketRate*100).toFixed(0)}%` },
+    { i:'🔥', t:'今日战绩', d: `${s.todayPnl >= 0 ? '+' : ''}${Math.round(s.todayPnl)} 元${s.pendingStakeAll > 0 ? ' (待赛'+s.pendingStakeAll+'元)' : ''}` }
+  ].map(x => `<div class="flex gap-3 items-start p-3 bg-slate-800/50 rounded-lg"><span class="text-lg">${x.i}</span><div><div class="font-semibold text-sm">${x.t}</div><div class="text-xs text-slate-400">${x.d}</div></div></div>`).join('');
+}
+
+function renderPlan(s) {
+  const phases = [
+    {name:'验证期', time:'第1-3个月', cap:'500元', strategy:'小注试探，2串1为主', target:'命中率≥35%', status:'进行中', pct:2/90},
+    {name:'加码期', time:'第4-6个月', cap:'2000-3000元', strategy:'验证通过后加码', target:'月收益率≥8%', status:'🔒', pct:0},
+    {name:'扩张期', time:'第7-12个月', cap:'每月+1000元', strategy:'持续追加', target:'年收入10万+', status:'🔒', pct:0}
+  ];
+  if (s.ticketRate >= 0.35) phases[1].status = '🔓 可解锁';
+
+  document.getElementById('phasePlan').innerHTML = phases.map(p => `
+    <div class="p-4 bg-slate-800/50 rounded-xl border ${p.status.includes('行中')?'border-blue-500/30':'border-slate-700/50'}">
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-bold text-lg">${p.name}</span>
+        <span class="chip ${p.status.includes('行中')?'chip-win':p.status.includes('解锁')?'chip-win':'chip-lose'}">${p.status}</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div><span class="text-slate-400">时间:</span> ${p.time}</div>
+        <div><span class="text-slate-400">本金:</span> ${p.cap}</div>
+        <div><span class="text-slate-400">策略:</span> ${p.strategy}</div>
+        <div><span class="text-slate-400">目标:</span> ${p.target}</div>
+      </div>
+      ${p.pct>0?`<div class="progress-bar mt-3"><div class="progress-fill" style="width:${p.pct*100}%;background:#3b82f6;"></div></div><div class="text-xs text-slate-500 mt-1">进度 ${(p.pct*100).toFixed(0)}%</div>`:''}
+    </div>
+  `).join('');
+
+  document.getElementById('goalTracking').innerHTML = `
+    <div class="p-3 bg-slate-800/50 rounded-lg">
+      <div class="text-sm font-semibold">串关命中率</div>
+      <div class="text-2xl font-black mt-1 ${s.ticketRate>=0.35?'win':'neutral'}">${(s.ticketRate*100).toFixed(0)}%</div>
+      <div class="text-xs text-slate-400 mt-1">目标 35% · ${s.totalTickets} 票</div>
+      <div class="progress-bar mt-2"><div class="progress-fill" style="width:${Math.min(100,s.ticketRate/0.35*100)}%;background:${s.ticketRate>=0.35?'#22c55e':'#f59e0b'};"></div></div>
+    </div>
+    <div class="p-3 bg-slate-800/50 rounded-lg">
+      <div class="text-sm font-semibold">单场命中率</div>
+      <div class="text-2xl font-black mt-1 ${s.pickRate>=0.4?'win':'neutral'}">${(s.pickRate*100).toFixed(0)}%</div>
+      <div class="text-xs text-slate-400 mt-1">目标 40% · ${s.totalPicks} 场</div>
+      <div class="progress-bar mt-2"><div class="progress-fill" style="width:${Math.min(100,s.pickRate/0.4*100)}%;background:${s.pickRate>=0.4?'#22c55e':'#f59e0b'};"></div></div>
+    </div>
+    <div class="p-3 bg-slate-800/50 rounded-lg">
+      <div class="text-sm font-semibold">当前可用</div>
+      <div class="text-2xl font-black mt-1 win">${Math.round(s.settledAvailable)} 元</div>
+      <div class="text-xs text-slate-400 mt-1">本金 ${data.capital} 元 · 已结算净亏 ${Math.round(Math.abs(s.settledPnl))} 元${s.pendingStakeAll > 0 ? ' · 待赛 '+s.pendingStakeAll+' 元' : ''}</div>
+    </div>
+    <div class="p-3 bg-slate-800/50 rounded-lg">
+      <div class="text-sm font-semibold">验证期进度</div>
+      <div class="text-2xl font-black mt-1 text-blue-400">第2天 / 90天</div>
+      <div class="progress-bar mt-2"><div class="progress-fill" style="width:${2/90*100}%;background:#3b82f6;"></div></div>
+    </div>
+  `;
+}
+
+// ================================================================
+// 添加投注
+// ================================================================
+function addBet() {
+  const date = document.getElementById('fDate').value;
+  const type = document.getElementById('fType').value;
+  const multi = parseInt(document.getElementById('fMul').value) || 1;
+  let stake = parseInt(document.getElementById('fStake').value);
+  const matchDivs = document.querySelectorAll('.match-box');
+
+  if (matchDivs.length === 0) { showMsg('请先选择串关类型', false); return; }
+
+  const matches = [];
+  let valid = true;
+  matchDivs.forEach(div => {
+    const home = div.querySelector('.mHome').value.trim();
+    const away = div.querySelector('.mAway').value.trim();
+    const pick = div.querySelector('.mPick').value;
+    const odds = parseFloat(div.querySelector('.mOdds').value);
+    const odds2El = div.querySelector('.mOdds2');
+    const odds2 = odds2El && odds2El.style.display !== 'none' ? parseFloat(odds2El.value) : null;
+    const result = div.querySelector('.mResult').value;
+    const score = div.querySelector('.mScore')?.value.trim() || '';
+    const league = div.querySelector('.mLeague').value.trim() || '其他';
+    if (!home || !away || !odds) { valid = false; return; }
+    // 双选时存两个赔率，单选只存一个
+    const finalOdds = pick.includes('或') ? odds : odds;
+    matches.push({ home, away, pick, odds: finalOdds, odds2, score, result, league });
+  });
+
+  if (!valid) { showMsg('请填完所有比赛的主队、客队、赔率', false); return; }
+
+  if (!stake || stake < 2) {
+    let combos = 1;
+    matches.forEach(m => { if (m.pick.includes('或')) combos *= 2; });
+    stake = 2 * multi * combos;
+  }
+
+  const newId = Math.max(...data.tickets.map(t=>t.id), 0) + 1;
+  data.tickets.push({ id: newId, date: date || new Date().toISOString().slice(0,10), type, multi, stake, matches });
+  showMsg(`✅ 已添加 #${newId} (${type}, ${matches.length}场, ${stake}元)`, true);
+  document.querySelectorAll('.mHome,.mAway,.mOdds,.mScore,.mLeague').forEach(el => el.value = '');
+  document.querySelectorAll('.mResult').forEach(el => el.value = 'pending');
+  render();
+}
+
+function showMsg(msg, ok) {
+  const el = document.getElementById('addMsg');
+  el.textContent = msg;
+  el.className = 'mt-3 text-sm font-semibold ' + (ok ? 'win' : 'lose');
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `竞彩数据_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function resetData() {
+  if (confirm('确认重置？')) {
+    localStorage.removeItem('fb_dashboard_v2');
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    render();
+  }
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  btn.classList.add('active');
+  setTimeout(() => Object.values(charts).forEach(c => c?.resize()), 100);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+  rebuildMatchFields();
+  render();
+});
+</script>
+</body>
+</html>
