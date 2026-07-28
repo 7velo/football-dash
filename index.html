@@ -198,6 +198,51 @@
 </div>
 
 <script>
+
+// ===== 云端同步 =====
+function syncToCloud() {
+  const data = loadData();
+  if (!data) return;
+  const json = JSON.stringify(data, null, 2);
+  // 用GitHub API推送data.json更新
+  // 注意: 需要配置GH_TOKEN环境变量，或手动导出导入
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data_export.json';
+  a.click();
+  alert('✅ 数据已导出!\n请上传此文件到GitHub仓库覆盖data.json');
+}
+
+// 页面加载时从云端获取数据
+async function loadCloudData() {
+  try {
+    const resp = await fetch('data.json?_=' + Date.now());
+    if (!resp.ok) return null;
+    const cloud = await resp.json();
+    const local = loadData();
+    // 合并: 云端结果覆盖本地待赛
+    if (cloud && cloud.tickets) {
+      cloud.tickets.forEach(ct => {
+        const lt = local.tickets.find(t => t.id === ct.id);
+        if (lt) {
+          ct.matches.forEach((cm, i) => {
+            if (lt.matches[i] && cm.result !== 'pending') {
+              lt.matches[i].result = cm.result;
+              if (cm.score) lt.matches[i].score = cm.score;
+            }
+          });
+        }
+      });
+      localStorage.setItem('fb_dashboard_v2', JSON.stringify(local));
+      if (typeof render === 'function') render();
+    }
+  } catch(e) {}
+}
+// 页面加载后拉取云端数据
+if (document.readyState === 'complete') loadCloudData();
+else window.addEventListener('load', loadCloudData);
+
 const DEFAULT_DATA = {
   capital: 500,
   tickets: [
