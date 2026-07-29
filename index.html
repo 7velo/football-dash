@@ -45,6 +45,8 @@
   .ticket-group { background: #0f172a; border-radius: 10px; overflow: hidden; }
   .ticket-row:not(:last-child) { border-bottom: 2px dashed #334155; }
   .ticket-header { background: #1e293b; padding: 6px 12px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+  .odds-input { background:#0f172a; border:1px solid #334155; border-radius:4px; padding:1px 4px; color:#f59e0b; width:48px; font-size:12px; text-align:center; font-family:monospace; outline:none; }
+  .odds-input:focus { border-color:#3b82f6; }
 </style>
 </head>
 <body>
@@ -335,78 +337,569 @@ else window.addEventListener('load', loadCloudData);
 const DEFAULT_DATA = {
   capital: 500,
   tickets: [
-    { id:1, date:'2026-07-21', type:'2x1', multi:2, stake:4, matches:[
-      {home:'萨巴赫', away:'库奥皮奥', pick:'平', odds:4.10, score:'1-0', result:'lose', league:'欧冠'},
-      {home:'格拉茨风暴', away:'哈茨', pick:'胜', odds:1.63, score:'4-0', result:'win', league:'欧冠'}
-    ]},
-    { id:2, date:'2026-07-21', type:'2x1', multi:1, stake:4, matches:[
-      {home:'萨巴赫', away:'库奥皮奥', pick:'胜或平', odds:1.44, score:'1-0', result:'win', league:'欧冠'},
-      {home:'奥胡斯', away:'波兹南莱赫', pick:'平', odds:2.95, score:'1-4', result:'lose', league:'欧冠'}
-    ]},
-    { id:3, date:'2026-07-21', type:'2x1', multi:2, stake:4, matches:[
-      {home:'格拉茨风暴', away:'哈茨', pick:'胜', odds:1.63, score:'4-0', result:'win', league:'欧冠'},
-      {home:'奥胡斯', away:'波兹南莱赫', pick:'平', odds:2.95, score:'1-4', result:'lose', league:'欧冠'}
-    ]},
-    { id:4, date:'2026-07-21', type:'3x1', multi:1, stake:2, matches:[
-      {home:'萨巴赫', away:'库奥皮奥', pick:'平', odds:4.10, score:'1-0', result:'lose', league:'欧冠'},
-      {home:'奥胡斯', away:'波兹南莱赫', pick:'平', odds:2.95, score:'1-4', result:'lose', league:'欧冠'},
-      {home:'格拉茨风暴', away:'哈茨', pick:'平', odds:3.65, score:'4-0', result:'lose', league:'欧冠'}
-    ]},
-    { id:5, date:'2026-07-22', type:'单场固定', multi:6, stake:12, matches:[
-      {home:'首尔FC', away:'浦项制铁', pick:'平', odds:3.25, score:'3-1', result:'lose', league:'K联赛'}
-    ]},
-    { id:6, date:'2026-07-22', type:'2x1', multi:3, stake:6, matches:[
-      {home:'雅罗', away:'塞伊奈约基', pick:'平', odds:3.45, score:'2-1', result:'lose', league:'芬兰超'},
-      {home:'韦斯特罗斯', away:'厄尔格里特', pick:'胜', odds:1.49, score:'2-0', result:'win', league:'瑞典超'}
-    ]},
-    { id:7, date:'2026-07-22', type:'2x1', multi:6, stake:12, matches:[
-      {home:'雅罗', away:'塞伊奈约基', pick:'平', odds:3.45, score:'2-1', result:'lose', league:'芬兰超'},
-      {home:'韦斯特罗斯', away:'厄尔格里特', pick:'平', odds:3.95, score:'2-0', result:'lose', league:'瑞典超'}
-    ]},
-    { id:8, date:'2026-07-23', type:'4x1', multi:3, stake:12, matches:[
-      {home:'圣加仑', away:'本菲卡', pick:'负', odds:1.23, score:'2-1', result:'lose', league:'欧冠'},
-      {home:'哈马比', away:'安德莱赫特', pick:'胜或平', odds:3.40, score:'1-1', result:'win', league:'欧冠'},
-      {home:'特温特', away:'费伦茨瓦罗斯', pick:'胜', odds:1.38, score:'1-2', result:'lose', league:'欧冠'},
-      {home:'斯普利特海杜克', away:'帕福斯', pick:'胜', odds:1.78, score:'2-0', result:'win', league:'欧冠'}
-    ]},
-    { id:9, date:'2026-07-23', type:'3x1', multi:3, stake:12, matches:[
-      {home:'利勒斯特罗姆', away:'维京', pick:'负', odds:1.93, score:'1-2', result:'win', league:'挪超'},
-      {home:'沙佩科恩斯', away:'弗拉门戈', pick:'负', odds:1.29, score:'0-4', result:'win', league:'巴甲'},
-      {home:'奥莫尼亚', away:'阿拉木图凯拉特', pick:'胜或平', odds:1.56, score:'1-0', result:'win', league:'欧冠'}
-    ]},
-    { id:10, date:'2026-07-23', type:'2x1', multi:1, stake:2, matches:[
-      {home:'迈阿密国际', away:'芝加哥火焰', pick:'平', odds:3.60, score:'3-2', result:'lose', league:'美职联'},
-      {home:'奥莫尼亚', away:'阿拉木图凯拉特', pick:'平', odds:3.60, score:'1-0', result:'lose', league:'欧冠'}
-    ]},
-    { id:11, date:'2026-07-23', type:'2x1', multi:3, stake:6, matches:[
-      {home:'韦斯特罗斯', away:'厄尔格里特', pick:'平', odds:3.95, score:'2-0', result:'lose', league:'瑞典超'},
-      {home:'雅罗', away:'塞伊奈约基', pick:'负', odds:1.90, score:'2-1', result:'lose', league:'芬兰超'}
-    ]},
-    { id:12, date:'2026-07-24', type:'5x1', multi:5, stake:10, matches:[
-      {home:'弗拉门戈', away:'圣保罗', pick:'胜', odds:1.32, score:'1-1', result:'lose', league:'巴甲'},
-      {home:'奥勒松', away:'维京', pick:'负', odds:1.35, score:'1-1', result:'lose', league:'挪超'},
-      {home:'哥德堡盖斯', away:'哈尔姆斯塔德', pick:'胜', odds:1.32, score:'1-1', result:'lose', league:'瑞典超'},
-      {home:'桑纳菲尤尔', away:'博德闪耀', pick:'负', odds:1.18, score:'0-3', result:'win', league:'挪超'},
-      {home:'格雷米奥', away:'弗鲁米嫩塞', pick:'负', odds:2.37, score:'1-1', result:'lose', league:'巴甲'}
-    ]},
-    { id:13, date:'2026-07-24', type:'4x1', multi:3, stake:12, matches:[
-      {home:'玛丽港', away:'AC奥卢', pick:'负', odds:1.34, score:'1-1', result:'lose', league:'芬兰超'},
-      {home:'库奥皮奥', away:'瓦萨', pick:'胜', odds:1.90, score:'3-1', result:'win', league:'芬兰超'},
-      {home:'克里斯蒂安松', away:'斯达', pick:'胜或平', odds:1.86, score:'1-2', result:'lose', league:'挪超'},
-      {home:'代格福什', away:'佐加顿斯', pick:'负', odds:1.49, score:'0-1', result:'win', league:'瑞典超'}
-    ]},
-    { id:14, date:'2026-07-24', type:'单场固定', multi:6, stake:12, matches:[
-      {home:'浦项制铁', away:'全北现代', pick:'胜', odds:2.85, score:'0-2', result:'lose', league:'K联赛'}
-    ]},
-    { id:15, date:'2026-07-27', type:'2x1', multi:3, stake:12, matches:[
-      {home:'罗森博格', away:'腓特烈斯塔', pick:'胜', odds:1.10, score:'4-0', result:'win', league:'挪超'},
-      {home:'赫根', away:'AIK索尔纳', pick:'平', odds:4.40, score:'0-0', result:'win', league:'瑞典超'}
-    ]},
-    { id:16, date:'2026-07-27', type:'比分2串1', multi:1, stake:2, matches:[
-      {home:'罗森博格', away:'腓特烈斯塔', pick:'2:0', odds:6.00, score:'4-0', result:'lose', league:'挪超'},
-      {home:'赫根', away:'AIK索尔纳', pick:'1:1', odds:8.00, score:'0-0', result:'lose', league:'瑞典超'}
-    ]}
-  ]
+      {
+        id: 1,
+        date: '2026-07-21',
+        type: '2x1',
+        multi: 2,
+        stake: 4,
+        matches: [
+          {
+            home: '萨巴赫',
+            away: '库奥皮奥',
+            pick: '平',
+            odds: 4.1,
+            score: '1-0',
+            result: 'lose',
+            league: '欧冠'
+          },
+          {
+            home: '格拉茨风暴',
+            away: '哈茨',
+            pick: '胜',
+            odds: 1.63,
+            score: '4-0',
+            result: 'win',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 2,
+        date: '2026-07-21',
+        type: '2x1',
+        multi: 1,
+        stake: 4,
+        matches: [
+          {
+            home: '萨巴赫',
+            away: '库奥皮奥',
+            pick: '胜或平',
+            odds: 1.44,
+            score: '1-0',
+            result: 'win',
+            league: '欧冠'
+          },
+          {
+            home: '奥胡斯',
+            away: '波兹南莱赫',
+            pick: '平',
+            odds: 2.95,
+            score: '1-4',
+            result: 'lose',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 3,
+        date: '2026-07-21',
+        type: '2x1',
+        multi: 2,
+        stake: 4,
+        matches: [
+          {
+            home: '格拉茨风暴',
+            away: '哈茨',
+            pick: '胜',
+            odds: 1.63,
+            score: '4-0',
+            result: 'win',
+            league: '欧冠'
+          },
+          {
+            home: '奥胡斯',
+            away: '波兹南莱赫',
+            pick: '平',
+            odds: 2.95,
+            score: '1-4',
+            result: 'lose',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 4,
+        date: '2026-07-21',
+        type: '3x1',
+        multi: 1,
+        stake: 2,
+        matches: [
+          {
+            home: '萨巴赫',
+            away: '库奥皮奥',
+            pick: '平',
+            odds: 4.1,
+            score: '1-0',
+            result: 'lose',
+            league: '欧冠'
+          },
+          {
+            home: '奥胡斯',
+            away: '波兹南莱赫',
+            pick: '平',
+            odds: 2.95,
+            score: '1-4',
+            result: 'lose',
+            league: '欧冠'
+          },
+          {
+            home: '格拉茨风暴',
+            away: '哈茨',
+            pick: '平',
+            odds: 3.65,
+            score: '4-0',
+            result: 'lose',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 5,
+        date: '2026-07-22',
+        type: '单场固定',
+        multi: 6,
+        stake: 12,
+        matches: [
+          {
+            home: '首尔FC',
+            away: '浦项制铁',
+            pick: '平',
+            odds: 3.25,
+            score: '3-1',
+            result: 'lose',
+            league: 'K联赛'
+          }
+        ]
+      },
+      {
+        id: 6,
+        date: '2026-07-22',
+        type: '2x1',
+        multi: 3,
+        stake: 6,
+        matches: [
+          {
+            home: '雅罗',
+            away: '塞伊奈约基',
+            pick: '平',
+            odds: 3.45,
+            score: '2-1',
+            result: 'lose',
+            league: '芬兰超'
+          },
+          {
+            home: '韦斯特罗斯',
+            away: '厄尔格里特',
+            pick: '胜',
+            odds: 1.49,
+            score: '2-0',
+            result: 'win',
+            league: '瑞典超'
+          }
+        ]
+      },
+      {
+        id: 7,
+        date: '2026-07-22',
+        type: '2x1',
+        multi: 6,
+        stake: 12,
+        matches: [
+          {
+            home: '雅罗',
+            away: '塞伊奈约基',
+            pick: '平',
+            odds: 3.45,
+            score: '2-1',
+            result: 'lose',
+            league: '芬兰超'
+          },
+          {
+            home: '韦斯特罗斯',
+            away: '厄尔格里特',
+            pick: '平',
+            odds: 3.95,
+            score: '2-0',
+            result: 'lose',
+            league: '瑞典超'
+          }
+        ]
+      },
+      {
+        id: 8,
+        date: '2026-07-23',
+        type: '4x1',
+        multi: 3,
+        stake: 12,
+        matches: [
+          {
+            home: '圣加仑',
+            away: '本菲卡',
+            pick: '负',
+            odds: 1.23,
+            score: '2-1',
+            result: 'lose',
+            league: '欧冠'
+          },
+          {
+            home: '哈马比',
+            away: '安德莱赫特',
+            pick: '胜或平',
+            odds: 3.4,
+            score: '1-1',
+            result: 'win',
+            league: '欧冠'
+          },
+          {
+            home: '特温特',
+            away: '费伦茨瓦罗斯',
+            pick: '胜',
+            odds: 1.38,
+            score: '1-2',
+            result: 'lose',
+            league: '欧冠'
+          },
+          {
+            home: '斯普利特海杜克',
+            away: '帕福斯',
+            pick: '胜',
+            odds: 1.78,
+            score: '2-0',
+            result: 'win',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 9,
+        date: '2026-07-23',
+        type: '3x1',
+        multi: 3,
+        stake: 12,
+        matches: [
+          {
+            home: '利勒斯特罗姆',
+            away: '维京',
+            pick: '负',
+            odds: 1.93,
+            score: '1-2',
+            result: 'win',
+            league: '挪超'
+          },
+          {
+            home: '沙佩科恩斯',
+            away: '弗拉门戈',
+            pick: '负',
+            odds: 1.29,
+            score: '0-4',
+            result: 'win',
+            league: '巴甲'
+          },
+          {
+            home: '奥莫尼亚',
+            away: '阿拉木图凯拉特',
+            pick: '胜或平',
+            odds: 1.56,
+            score: '1-0',
+            result: 'win',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 10,
+        date: '2026-07-23',
+        type: '2x1',
+        multi: 1,
+        stake: 2,
+        matches: [
+          {
+            home: '迈阿密国际',
+            away: '芝加哥火焰',
+            pick: '平',
+            odds: 3.6,
+            score: '3-2',
+            result: 'lose',
+            league: '美职联'
+          },
+          {
+            home: '奥莫尼亚',
+            away: '阿拉木图凯拉特',
+            pick: '平',
+            odds: 3.6,
+            score: '1-0',
+            result: 'lose',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 11,
+        date: '2026-07-23',
+        type: '2x1',
+        multi: 3,
+        stake: 6,
+        matches: [
+          {
+            home: '韦斯特罗斯',
+            away: '厄尔格里特',
+            pick: '平',
+            odds: 3.95,
+            score: '2-0',
+            result: 'lose',
+            league: '瑞典超'
+          },
+          {
+            home: '雅罗',
+            away: '塞伊奈约基',
+            pick: '负',
+            odds: 1.9,
+            score: '2-1',
+            result: 'lose',
+            league: '芬兰超'
+          }
+        ]
+      },
+      {
+        id: 12,
+        date: '2026-07-24',
+        type: '5x1',
+        multi: 5,
+        stake: 10,
+        matches: [
+          {
+            home: '弗拉门戈',
+            away: '圣保罗',
+            pick: '胜',
+            odds: 1.32,
+            score: '1-1',
+            result: 'lose',
+            league: '巴甲'
+          },
+          {
+            home: '奥勒松',
+            away: '维京',
+            pick: '负',
+            odds: 1.35,
+            score: '1-1',
+            result: 'lose',
+            league: '挪超'
+          },
+          {
+            home: '哥德堡盖斯',
+            away: '哈尔姆斯塔德',
+            pick: '胜',
+            odds: 1.32,
+            score: '1-1',
+            result: 'lose',
+            league: '瑞典超'
+          },
+          {
+            home: '桑纳菲尤尔',
+            away: '博德闪耀',
+            pick: '负',
+            odds: 1.18,
+            score: '0-3',
+            result: 'win',
+            league: '挪超'
+          },
+          {
+            home: '格雷米奥',
+            away: '弗鲁米嫩塞',
+            pick: '负',
+            odds: 2.37,
+            score: '1-1',
+            result: 'lose',
+            league: '巴甲'
+          }
+        ]
+      },
+      {
+        id: 13,
+        date: '2026-07-24',
+        type: '4x1',
+        multi: 3,
+        stake: 12,
+        matches: [
+          {
+            home: '玛丽港',
+            away: 'AC奥卢',
+            pick: '负',
+            odds: 1.34,
+            score: '1-1',
+            result: 'lose',
+            league: '芬兰超'
+          },
+          {
+            home: '库奥皮奥',
+            away: '瓦萨',
+            pick: '胜',
+            odds: 1.9,
+            score: '3-1',
+            result: 'win',
+            league: '芬兰超'
+          },
+          {
+            home: '克里斯蒂安松',
+            away: '斯达',
+            pick: '胜或平',
+            odds: 1.86,
+            score: '1-2',
+            result: 'lose',
+            league: '挪超'
+          },
+          {
+            home: '代格福什',
+            away: '佐加顿斯',
+            pick: '负',
+            odds: 1.49,
+            score: '0-1',
+            result: 'win',
+            league: '瑞典超'
+          }
+        ]
+      },
+      {
+        id: 14,
+        date: '2026-07-24',
+        type: '单场固定',
+        multi: 6,
+        stake: 12,
+        matches: [
+          {
+            home: '浦项制铁',
+            away: '全北现代',
+            pick: '胜',
+            odds: 2.85,
+            score: '0-2',
+            result: 'lose',
+            league: 'K联赛'
+          }
+        ]
+      },
+      {
+        id: 15,
+        date: '2026-07-27',
+        type: '2x1',
+        multi: 3,
+        stake: 12,
+        matches: [
+          {
+            home: '罗森博格',
+            away: '腓特烈斯塔',
+            pick: '胜',
+            odds: 1.1,
+            score: '4-0',
+            result: 'win',
+            league: '挪超'
+          },
+          {
+            home: '赫根',
+            away: 'AIK索尔纳',
+            pick: '平',
+            odds: 4.4,
+            score: '0-0',
+            result: 'win',
+            league: '瑞典超'
+          }
+        ]
+      },
+      {
+        id: 16,
+        date: '2026-07-27',
+        type: '比分2串1',
+        multi: 1,
+        stake: 2,
+        matches: [
+          {
+            home: '罗森博格',
+            away: '腓特烈斯塔',
+            pick: '2:0',
+            odds: 6,
+            score: '4-0',
+            result: 'lose',
+            league: '挪超'
+          },
+          {
+            home: '赫根',
+            away: 'AIK索尔纳',
+            pick: '1:1',
+            odds: 8,
+            score: '0-0',
+            result: 'lose',
+            league: '瑞典超'
+          }
+        ]
+      },
+      {
+        id: 17,
+        date: '2026-07-28',
+        type: '单场固定',
+        multi: 4,
+        stake: 8,
+        matches: [
+          {
+            home: '库奥皮奥',
+            away: '萨巴赫',
+            pick: '负',
+            odds: 2.13,
+            odds2: null,
+            score: '0-2',
+            result: 'win',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 18,
+        date: '2026-07-28',
+        type: '单场固定',
+        multi: 2,
+        stake: 4,
+        matches: [
+          {
+            home: '库奥皮奥',
+            away: '萨巴赫',
+            pick: '平',
+            odds: 3.45,
+            odds2: null,
+            score: '0-2',
+            result: 'lose',
+            league: '欧冠'
+          }
+        ]
+      },
+      {
+        id: 19,
+        date: '2026-07-29',
+        type: '2x1',
+        multi: 6,
+        stake: 12,
+        matches: [
+          {
+            home: '波兹南',
+            away: '奥胡斯',
+            pick: '胜',
+            odds: 1.5,
+            odds2: null,
+            score: '',
+            result: 'pending',
+            league: '欧冠'
+          },
+          {
+            home: '巴西国际',
+            away: '佛拉门戈',
+            pick: '负',
+            odds: 1.63,
+            odds2: null,
+            score: '',
+            result: 'pending',
+            league: '巴甲'
+          }
+        ]
+      }
+    ]
 };
 
 let data = loadData();
@@ -417,6 +910,20 @@ function loadData() {
   const raw = localStorage.getItem('fb_dashboard_v2');
   let local = null;
   if (raw) try { local = JSON.parse(raw); } catch(e) {}
+  
+  // 自动合并DEFAULT_DATA中新增的票(如新投注)到已有数据中
+  if (local) {
+    let changed = false;
+    DEFAULT_DATA.tickets.forEach(dt => {
+      if (!local.tickets.find(t => t.id === dt.id)) {
+        local.tickets.push(dt);
+        changed = true;
+      }
+    });
+    if (changed) {
+      localStorage.setItem('fb_dashboard_v2', JSON.stringify(local));
+    }
+  }
   
   // 从云端data.json获取(自动更新的比分结果)
   fetch('data.json?_=' + Date.now())
@@ -711,7 +1218,12 @@ function renderRecords(s) {
         </div>
         <div class="flex items-center gap-3 text-xs">
           <input class="input-field" style="width:52px;padding:2px 6px;font-size:12px;text-align:center;font-family:monospace;" value="${m.score||''}" placeholder="-" onchange="updateMatchScore(${t.id},${mi},this.value)" oninput="autoResizeInput(this)">
-          <span class="chip ${m.result === 'win' ? 'chip-win' : m.result === 'lose' ? 'chip-lose' : 'chip-pending'}">${pickType} ${m.odds2 ? m.odds+'/'+m.odds2 : '@'+m.odds}</span>
+          <span class="chip ${m.result === 'win' ? 'chip-win' : m.result === 'lose' ? 'chip-lose' : 'chip-pending'}">${pickType}
+            ${m.odds2
+              ? `<input class="input-field odds-input" value="${m.odds}" onchange="updateMatchOdds(${t.id},${mi},'odds',this.value)">/<input class="input-field odds-input" value="${m.odds2}" onchange="updateMatchOdds(${t.id},${mi},'odds2',this.value)">`
+              : `@<input class="input-field odds-input" value="${m.odds}" onchange="updateMatchOdds(${t.id},${mi},'odds',this.value)">`
+            }
+          </span>
           <select class="input-field result-select" style="padding:2px 6px;font-size:12px;width:auto;" onchange="updateMatchResult(${t.id},${mi},this.value)">
             <option value="pending" ${m.result==='pending'?'selected':''}>⏳待赛</option>
             <option value="win" ${m.result==='win'?'selected':''}>✅中</option>
@@ -773,7 +1285,18 @@ function updateMatchScore(ticketId, matchIdx, newScore) {
 }
 
 function autoResizeInput(el) {
-  el.style.width = Math.max(40, Math.min(70, (el.value.length || 1) * 10 + 10)) + 'px';
+  el.style.width = Math.max(30, Math.min(60, el.value.length * 10)) + 'px';
+}
+
+// 实时更新赔率
+function updateMatchOdds(ticketId, matchIdx, field, value) {
+  const ticket = data.tickets.find(t => t.id === ticketId);
+  if (!ticket || !ticket.matches[matchIdx]) return;
+  const parsed = parseFloat(value);
+  if (isNaN(parsed) || parsed < 1) return;
+  ticket.matches[matchIdx][field] = parsed;
+  render();
+  setTimeout(autoSync, 500);
 }
 
 // ===================== 图表 =====================
