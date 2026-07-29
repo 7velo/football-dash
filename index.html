@@ -60,8 +60,8 @@
       <p class="text-sm text-slate-400 mt-1">飞翔大魔王 · 验证期 · 三阶段计划</p>
     </div>
     <div class="flex gap-2">
-      <button onclick="syncToCloud()" class="btn btn-sm" style="background:#22c55e;color:white;">☁️ 同步</button>
-      <button onclick="resetData()" class="btn btn-sm" style="background:#334155;color:#94a3b8;">🔄 重置</button>
+      <button onclick="syncToCloud()" class="btn btn-sm" style="background:#22c55e;color:white;">☁️ 推云端</button>
+      <button onclick="pullFromCloud()" class="btn btn-sm" style="background:#3b82f6;color:white;">📥 从云端拉</button>
       <button onclick="exportData()" class="btn btn-sm" style="background:#334155;color:#94a3b8;">📥 导出</button>
     </div>
   </div>
@@ -205,15 +205,12 @@
 
 
 
-// ===== 🔄 自动同步(方案C) =====
+// ===== 🔄 推送数据到云端（GitHub API） =====
 function autoSync() {
   const token = localStorage.getItem('gh_sync_token');
-  if (!token) return; // 没存token就不自动同步
-  
-  const data = loadData();
+  if (!token) return;
   const json = JSON.stringify(data, null, 2);
   const b64 = btoa(unescape(encodeURIComponent(json)));
-  
   fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
     headers: {'Authorization': 'token ' + token}
   })
@@ -230,10 +227,10 @@ function autoSync() {
       })
     });
   })
-  .catch(() => {}); // 静默失败，不影响用户操作
+  .catch(() => {});
 }
 
-// ===== ☁️ 一键同步到云 端 =====
+// ===== ☁️ 推送数据到云端 =====
 function syncToCloud() {
   let token = localStorage.getItem('gh_sync_token');
   if (!token) {
@@ -244,21 +241,18 @@ function syncToCloud() {
   
   const btn = document.querySelector('button[onclick*="syncToCloud"]');
   const origText = btn.textContent;
-  btn.textContent = '⏳ 同步中...';
+  btn.textContent = '⏳ 上传中...';
   btn.disabled = true;
   
-  const data = loadData();
   const json = JSON.stringify(data, null, 2);
   const b64 = btoa(unescape(encodeURIComponent(json)));
   
-  // 获取当前data.json的SHA
   fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
     headers: {'Authorization': 'token ' + token}
   })
   .then(r => r.json())
   .then(existing => {
     const sha = existing.sha;
-    // 上传新数据
     return fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
       method: 'PUT',
       headers: {'Authorization': 'token ' + token, 'Content-Type': 'application/json'},
@@ -272,7 +266,7 @@ function syncToCloud() {
   })
   .then(r => {
     if (r.ok) {
-      btn.textContent = '✅ 已同步';
+      btn.textContent = '✅ 已上传';
       setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
     } else {
       throw new Error('HTTP ' + r.status);
@@ -285,54 +279,47 @@ function syncToCloud() {
       localStorage.removeItem('gh_sync_token');
       alert('Token 无效或已过期，请重新生成\nhttps://github.com/settings/tokens');
     } else {
-      alert('同步失败: ' + e.message);
+      alert('上传失败: ' + e.message);
     }
   });
 }
 
-// ===== 云端同步 =====
-function syncToCloud() {
-  const data = loadData();
-  if (!data) return;
-  const json = JSON.stringify(data, null, 2);
-  // 用GitHub API推送data.json更新
-  // 注意: 需要配置GH_TOKEN环境变量，或手动导出导入
-  const blob = new Blob([json], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'data_export.json';
-  a.click();
-  alert('✅ 数据已导出!\n请上传此文件到GitHub仓库覆盖data.json');
+// ===== ☁️ 从云端拉取数据 =====
+function pullFromCloud() {
+  let token = localStorage.getItem('gh_sync_token');
+  if (!token) {
+    token = prompt('请输入 GitHub Token\n(只存本地，一次输入永久有效)\nhttps://github.com/settings/tokens');
+    if (!token) return;
+    localStorage.setItem('gh_sync_token', token);
+  }
+  
+  const btn = document.querySelector('button[onclick*="pullFromCloud"]');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ 下载中...';
+  btn.disabled = true;
+  
+  fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', {
+    headers: {'Authorization': 'token ' + token}
+  })
+  .then(r => r.json())
+  .then(resp => {
+    const content = atob(resp.content);
+    const cloud = JSON.parse(content);
+    // 完全替换本地数据
+    data.tickets = cloud.tickets;
+    data.capital = cloud.capital;
+    localStorage.setItem('fb_dashboard_v2', JSON.stringify(data));
+    btn.textContent = '✅ 已拉取';
+    setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+    render();
+  })
+  .catch(e => {
+    btn.textContent = '❌ 失败';
+    setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 3000);
+    alert('拉取失败: ' + e.message);
+  });
 }
 
-// 页面加载时从云端获取数据
-async function loadCloudData() {
-  try {
-    const resp = await fetch('data.json?_=' + Date.now());
-    if (!resp.ok) return null;
-    const cloud = await resp.json();
-    const local = loadData();
-    // 合并: 云端结果覆盖本地待赛
-    if (cloud && cloud.tickets) {
-      cloud.tickets.forEach(ct => {
-        const lt = local.tickets.find(t => t.id === ct.id);
-        if (lt) {
-          ct.matches.forEach((cm, i) => {
-            if (lt.matches[i] && cm.result !== 'pending') {
-              lt.matches[i].result = cm.result;
-              if (cm.score) lt.matches[i].score = cm.score;
-            }
-          });
-        }
-      });
-      localStorage.setItem('fb_dashboard_v2', JSON.stringify(local));
-      if (typeof render === 'function') render();
-    }
-  } catch(e) {}
-}
-// 页面加载后拉取云端数据
-if (document.readyState === 'complete') loadCloudData();
-else window.addEventListener('load', loadCloudData);
 
 const DEFAULT_DATA = {
   capital: 500,
@@ -924,32 +911,6 @@ function loadData() {
       localStorage.setItem('fb_dashboard_v2', JSON.stringify(local));
     }
   }
-  
-  // 从云端data.json获取(自动更新的比分结果)
-  fetch('data.json?_=' + Date.now())
-    .then(r => r.json())
-    .then(cloud => {
-      // 合并云端数据到localStorage(只合并已出结果的比赛)
-      if (cloud && cloud.tickets) {
-        let merged = local || JSON.parse(JSON.stringify(DEFAULT_DATA));
-        cloud.tickets.forEach(ct => {
-          let existing = merged.tickets.find(t => t.id === ct.id);
-          if (existing) {
-            // 合并每场比赛的结果(云端优先: 如果云端有结果就覆盖)
-            ct.matches.forEach((cm, i) => {
-              if (existing.matches[i] && cm.result !== 'pending') {
-                existing.matches[i].result = cm.result;
-                if (cm.score) existing.matches[i].score = cm.score;
-              }
-            });
-          }
-        });
-        localStorage.setItem('fb_dashboard_v2', JSON.stringify(merged));
-        // 如果当前页面已加载，重新渲染
-        if (typeof render === 'function') render();
-      }
-    })
-    .catch(() => {}); // 离线时忽略
   
   return local || JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
