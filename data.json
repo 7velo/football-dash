@@ -580,6 +580,24 @@
           "league": "其他"
         }
       ]
+    },
+    {
+      "id": 21,
+      "date": "2026-07-30",
+      "type": "单场固定",
+      "multi": 1,
+      "stake": 2,
+      "matches": [
+        {
+          "home": "1",
+          "away": "1",
+          "pick": "胜",
+          "odds": 1,
+          "result": "pending",
+          "score": "",
+          "league": "1"
+        }
+      ]
     }
   ]
 }
