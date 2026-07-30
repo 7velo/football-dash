@@ -572,22 +572,20 @@
       "matches": [
         {
           "home": "中日德兰",
-          "away": "贝西克塔斯",
+          "away": "贝西克格斯",
           "pick": "胜",
           "odds": 1.73,
-          "odds2": null,
-          "score": "",
           "result": "pending",
+          "score": "",
           "league": "欧罗巴"
         },
         {
-          "home": "弗伦茨瓦罗斯",
+          "home": "费伦茨瓦罗斯",
           "away": "特温特",
           "pick": "负",
           "odds": 2.19,
-          "odds2": null,
-          "score": "",
           "result": "pending",
+          "score": "",
           "league": "欧罗巴"
         }
       ]
