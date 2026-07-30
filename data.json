@@ -545,10 +545,10 @@
           "home": "波兹南",
           "away": "奥胡斯",
           "pick": "胜",
-          "odds": 1.51,
+          "odds": 1.5,
           "odds2": null,
-          "score": "",
-          "result": "pending",
+          "score": "0:3",
+          "result": "lose",
           "league": "欧冠"
         },
         {
@@ -557,8 +557,8 @@
           "pick": "负",
           "odds": 1.63,
           "odds2": null,
-          "score": "",
-          "result": "pending",
+          "score": "1:0",
+          "result": "lose",
           "league": "巴甲"
         }
       ]
