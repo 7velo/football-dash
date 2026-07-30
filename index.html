@@ -1007,18 +1007,15 @@ function switchTab(name,btn){
 
 
 function pullFromCloud() {
-  let token = localStorage.getItem('gh_sync_token');
-  if (!token) { token = prompt('请输入 GitHub Token\nhttps://github.com/settings/tokens'); if (!token) return; localStorage.setItem('gh_sync_token', token); }
-  fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json', { headers: {'Authorization': 'token '+token} })
-  .then(r => r.json()).then(resp => {
-    const content = atob(resp.content);
-    const cloud = JSON.parse(content);
+  fetch('https://raw.githubusercontent.com/7velo/football-dash/main/data.json')
+  .then(function(r) { return r.json(); })
+  .then(function(cloud) {
     data.tickets = cloud.tickets;
     data.capital = cloud.capital || 500;
     localStorage.setItem('fb_dashboard_v2', JSON.stringify(data));
     alert('✅ 已从云端拉取 ' + cloud.tickets.length + ' 张票');
     render();
-  }).catch(e => alert('拉取失败: ' + e.message));
+  }).catch(function(e) { alert('拉取失败: ' + e.message); });
 }
 
 function exportData(){
