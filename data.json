@@ -562,6 +562,35 @@
           "league": "巴甲"
         }
       ]
+    },
+    {
+      "id": 20,
+      "date": "2026-07-30",
+      "type": "2x1",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "中日德兰",
+          "away": "贝西克塔斯",
+          "pick": "胜",
+          "odds": 1.73,
+          "odds2": null,
+          "score": "",
+          "result": "pending",
+          "league": "欧罗巴"
+        },
+        {
+          "home": "弗伦茨瓦罗斯",
+          "away": "特温特",
+          "pick": "负",
+          "odds": 2.19,
+          "odds2": null,
+          "score": "",
+          "result": "pending",
+          "league": "欧罗巴"
+        }
+      ]
     }
   ]
 }
