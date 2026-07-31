@@ -589,6 +589,24 @@
           "league": "欧罗巴"
         }
       ]
+    },
+    {
+      "id": 21,
+      "date": "2026-07-31",
+      "type": "单场固定",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "浦项制铁",
+          "away": "金泉尚武",
+          "pick": "平",
+          "odds": 3.05,
+          "result": "pending",
+          "score": "",
+          "league": "韩职"
+        }
+      ]
     }
   ]
 }
