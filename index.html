@@ -687,6 +687,21 @@ function loadData() {
 }
 function save() { localStorage.setItem('fb_dashboard_v2', JSON.stringify(data)); }
 
+// 自动同步：页面加载后从云端拉取最新数据（静默，失败则用本地缓存）
+function autoSyncFromCloud() {
+  return fetch('https://raw.githubusercontent.com/7velo/football-dash/main/data.json?t=' + Date.now(), { cache: 'no-store' })
+  .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(function(cloud) {
+    if (cloud && Array.isArray(cloud.tickets) && cloud.tickets.length > 0) {
+      data.tickets = cloud.tickets;
+      data.capital = cloud.capital || data.capital || 500;
+      save();
+      render();
+    }
+  })
+  .catch(function(e) { /* 静默失败：保留本地数据，不打扰用户 */ });
+}
+
 function calcPayout(t, w) {
   if (!w) return 0;
   if (t.type === '单场固定') return Math.round(t.matches[0].odds * 2 * t.multi);
@@ -1075,6 +1090,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
   rebuildMatchFields();autoCalcStake();
   render();
+  autoSyncFromCloud();
 });
 </script>
 </body>
