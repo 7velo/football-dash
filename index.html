@@ -37,7 +37,7 @@ body{background:#0f172a;color:#e2e8f0}
 <body>
 <div class="max-w-7xl mx-auto px-4 py-6">
 <div class="flex items-center justify-between mb-6">
-<div><h1 class="text-2xl font-black text-white">⚽ 竞彩投资看板</h1><p class="text-sm text-slate-400 mt-1">飞翔大魔王 · 验证期 · 三阶段计划</p></div>
+<div><h1 class="text-2xl font-black text-white">⚽ 竞彩投资看板</h1><p class="text-sm text-slate-400 mt-1">飞翔大魔王 · 验证期 · 三阶段计划 <span id="liveClock" style="color:#eab308;font-weight:600;margin-left:8px;font-family:monospace"></span></p></div>
 <div class="flex gap-2">
 <button onclick="fixGarbledData()" class="btn btn-sm" style="background:#f59e0b;color:black">🔧 修复乱码</button>
 <button onclick="syncToCloud()" class="btn btn-sm" style="background:#eab308;color:white">☁️ 推云端</button>
@@ -666,11 +666,78 @@ const DEFAULT_DATA = {
           "league": "巴甲"
         }
       ]
+    },
+    {
+      "id": 20,
+      "date": "2026-07-30",
+      "type": "2x1",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "中日德兰",
+          "away": "贝西克塔斯",
+          "pick": "胜",
+          "odds": 1.73,
+          "result": "lose",
+          "score": "0:2",
+          "league": "欧罗巴"
+        },
+        {
+          "home": "弗伦茨瓦罗斯",
+          "away": "特温特",
+          "pick": "负",
+          "odds": 2.19,
+          "result": "lose",
+          "score": "2:2",
+          "league": "欧罗巴"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "date": "2026-08-01",
+      "type": "单场固定",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "浦项制铁",
+          "away": "金泉尚武",
+          "pick": "平",
+          "odds": 3.05,
+          "result": "pending",
+          "score": "",
+          "league": "韩职"
+        }
+      ]
     }
   ]
 };
 
 let data, charts = {};
+let editingId = null;
+
+// 北京时间工具：返回当前北京日期 YYYY-MM-DD
+function bjToday() {
+  const now = new Date();
+  const bj = new Date(now.getTime() + 8 * 3600 * 1000);
+  return bj.toISOString().slice(0, 10);
+}
+// 实时时钟：每秒刷新北京时间
+function startLiveClock() {
+  const el = document.getElementById('liveClock');
+  if (!el) return;
+  function tick() {
+    const now = new Date();
+    const bj = new Date(now.getTime() + 8 * 3600 * 1000);
+    const y = bj.getFullYear(), mo = (bj.getMonth()+1).toString().padStart(2,'0'), d = bj.getDate().toString().padStart(2,'0');
+    const h = bj.getHours().toString().padStart(2,'0'), mi = bj.getMinutes().toString().padStart(2,'0'), s = bj.getSeconds().toString().padStart(2,'0');
+    el.textContent = '🕐 ' + y + '-' + mo + '-' + d + ' ' + h + ':' + mi + ':' + s + ' BJT';
+  }
+  tick();
+  setInterval(tick, 1000);
+}
 
 function loadData() {
   const raw = localStorage.getItem('fb_dashboard_v2');
@@ -686,6 +753,38 @@ function loadData() {
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 function save() { localStorage.setItem('fb_dashboard_v2', JSON.stringify(data)); }
+
+// 自动同步：页面加载后从云端拉取最新数据（静默，失败则用本地缓存）
+function autoSyncFromCloud() {
+  // 优先用 api.github.com（墙内可通），raw.githubusercontent.com 常被墙
+  return fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json?t=' + Date.now(), {
+    headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store'
+  })
+  .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(function(d) {
+    var cloud = JSON.parse(decodeURIComponent(escape(atob(d.content))));
+    if (cloud && Array.isArray(cloud.tickets) && cloud.tickets.length > 0) {
+      data.tickets = cloud.tickets;
+      data.capital = cloud.capital || data.capital || 500;
+      save();
+      render();
+    }
+  })
+  .catch(function(e) {
+    // 回退：尝试 raw.githubusercontent.com（某些网络环境可用）
+    return fetch('https://raw.githubusercontent.com/7velo/football-dash/main/data.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(cloud) {
+      if (cloud && Array.isArray(cloud.tickets) && cloud.tickets.length > 0) {
+        data.tickets = cloud.tickets;
+        data.capital = cloud.capital || data.capital || 500;
+        save();
+        render();
+      }
+    })
+    .catch(function(e2) { /* 双通道都失败：保留本地数据，不打扰用户 */ });
+  });
+}
 
 function calcPayout(t, w) {
   if (!w) return 0;
@@ -786,31 +885,20 @@ function render() {
   const pel=document.getElementById('cPnl');
   pel.textContent=(s.pnl>=0?'+':'')+Math.round(s.pnl);
   pel.className='stat-value '+(s.pnl>=0?'win':'lose');
-  // 今日战绩：取最新有结算日期的盈亏
-  var todayDate = '', todayPnl = 0;
-  data.tickets.forEach(function(t) {
-    if (!t.matches.some(function(m) { return m.result === 'pending'; })) {
-      if (t.date > todayDate) todayDate = t.date;
-    }
+  // 今日战绩：按真实北京日期计算，今天有结算票才显示战绩，否则为 0
+  var todayDate = bjToday();
+  var todayPnl = 0;
+  var todayTickets = data.tickets.filter(function(t) { return t.date === todayDate && !t.matches.some(function(m) { return m.result === 'pending'; }); });
+  var todayStake = 0, todayPayout = 0;
+  todayTickets.forEach(function(t) {
+    todayStake += t.stake;
+    if (t.matches.every(function(m) { return m.result === 'win'; })) todayPayout += calcPayout(t, true);
   });
-  if (todayDate) {
-    var todayTickets = data.tickets.filter(function(t) { return t.date === todayDate && !t.matches.some(function(m) { return m.result === 'pending'; }); });
-    var todayStake = 0, todayPayout = 0;
-    todayTickets.forEach(function(t) {
-      todayStake += t.stake;
-      if (t.matches.every(function(m) { return m.result === 'win'; })) todayPayout += calcPayout(t, true);
-    });
-    todayPnl = todayPayout - todayStake;
-  }
+  todayPnl = todayPayout - todayStake;
   var cToday = document.getElementById('cToday');
   if (cToday) {
-    var dispDate = '';
-  if (todayDate) {
-    var d = new Date(todayDate);
-    d.setDate(d.getDate() + 1);
-    dispDate = d.getFullYear() + '-' + (d.getMonth()+1).toString().padStart(2,'0') + '-' + d.getDate().toString().padStart(2,'0');
-  }
-  cToday.innerHTML = (todayPnl >= 0 ? '+' : '') + Math.round(todayPnl);
+    var dispDate = todayDate;
+    cToday.innerHTML = (todayPnl >= 0 ? '+' : '') + Math.round(todayPnl);
     cToday.className = 'stat-value ' + (todayPnl >= 0 ? 'win' : 'lose');
   }
   var cEx = document.getElementById('cTodayExtra');
@@ -822,7 +910,8 @@ function render() {
       pendingTickets.forEach(function(t) { if (t.date > pendingDate) pendingDate = t.date; });
       pStr = ' | 待赛' + s.pending + '元';
     }
-    cEx.textContent = dispDate + '结算' + pStr;
+    var noBetToday = todayTickets.length === 0;
+    cEx.textContent = noBetToday ? (dispDate + ' 今日无投注' + pStr) : (dispDate + '结算' + pStr);
   }
   document.getElementById('cTicketRate').textContent=(s.ticketRate*100).toFixed(0)+'%';
   document.getElementById('cPickRate').textContent=(s.pickRate*100).toFixed(0)+'%';
@@ -843,13 +932,115 @@ function renderRecords(s) {
     var statusIcon=hp?'⏳':aw?'✅':'❌';
     var statusText=hp?'待赛':aw?'中 '+pay+'元':'未中';
     return '<div class="ticket-group mb-3" style="border:1px solid #334155;border-radius:12px">'+
-      '<div class="ticket-header" style="background:#1e293b;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-radius:12px 12px 0 0"><div class="flex items-center gap-3"><span class="font-bold" style="color:#eab308;font-size:14px">#'+t.id+'</span><span class="text-slate-500" style="font-size:12px">'+t.date+'</span><span class="chip" style="background:#334155;color:#94a3b8;font-size:11px">'+t.type+'</span><span class="text-slate-500" style="font-size:12px">'+t.stake+'元</span></div><div class="flex items-center gap-2"><span class="chip '+(hp?'chip-pending':aw?'chip-win':'chip-lose')+'" style="font-size:11px">'+statusIcon+' '+statusText+'</span><span class="font-bold" style="color:'+(pay-t.stake>=0?'#eab308':'#ff0000')+';font-size:14px">'+(pay-t.stake>=0?'+':'')+(pay-t.stake)+'元</span></div></div>'+
-      '<div style="padding:2px 14px">'+
+      '<div class="ticket-header" style="background:#1e293b;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-radius:12px 12px 0 0"><div class="flex items-center gap-3"><span class="font-bold" style="color:#eab308;font-size:14px">#'+t.id+'</span><span class="text-slate-500" style="font-size:12px">'+t.date+'</span><span class="chip" style="background:#334155;color:#94a3b8;font-size:11px">'+t.type+'</span><span class="text-slate-500" style="font-size:12px">'+t.stake+'元</span></div><div class="flex items-center gap-2"><span class="chip '+(hp?'chip-pending':aw?'chip-win':'chip-lose')+'" style="font-size:11px">'+statusIcon+' '+statusText+'</span><span class="font-bold" style="color:'+(pay-t.stake>=0?'#eab308':'#ff0000')+';font-size:14px">'+(pay-t.stake>=0?'+':'')+(pay-t.stake)+'元</span><button onclick="editTicket('+t.id+')" title="编辑此单" style="background:#334155;color:#60a5fa;border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer">✏️ 编辑</button><button onclick="deleteTicket('+t.id+')" title="删除此单" style="background:#334155;color:#f87171;border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer">🗑️</button></div></div>'+
+      (editingId===t.id?renderEditForm(t):renderTicketBody(t));
+  }).join('');
+}
+function renderTicketBody(t){
+  return '<div style="padding:2px 14px">'+
       '<div style="display:grid;grid-template-columns:2fr 60px 100px 80px 70px;gap:4px;padding:4px 0;font-size:11px;color:#64748b;border-bottom:1px solid #1e293b">'+
       '<div>比赛</div><div style="text-align:center">比分</div><div style="text-align:center">选项</div><div style="text-align:center">赛果</div><div style="text-align:right">联赛</div></div>'+
       t.matches.map((m,mi)=>'<div style="display:grid;grid-template-columns:2fr 60px 100px 80px 70px;gap:4px;padding:6px 0;align-items:center;border-bottom:1px solid #1e293b;font-size:13px"><div><span class="text-slate-300">'+m.home+'</span><span class="text-slate-600 mx-1" style="color:#475569">vs</span><span class="text-slate-300">'+m.away+'</span></div><div style="text-align:center"><input class="input-field" style="width:50px;padding:2px 4px;font-size:12px;text-align:center;font-family:monospace" value="'+(m.score||'')+'" onchange="updateScore('+t.id+','+mi+',this.value)"></div><div style="text-align:center"><span class="chip '+(m.result==='win'?'chip-win':m.result==='lose'?'chip-lose':'chip-pending')+'" style="font-size:11px">'+m.pick+' @'+m.odds+'</span></div><div style="text-align:center"><select class="input-field" style="padding:2px 4px;font-size:11px;width:60px" onchange="updateResult('+t.id+','+mi+',this.value)"><option value="pending"'+(m.result==='pending'?' selected':'')+'>⏳待赛</option><option value="win"'+(m.result==='win'?' selected':'')+'>✅中</option><option value="lose"'+(m.result==='lose'?' selected':'')+'>❌错</option></select></div><div style="text-align:right;color:#64748b;font-size:12px">'+m.league+'</div></div>').join('')+
-      '</div></div>';
-  }).join('');
+      '</div>';
+}
+function renderEditForm(t){
+  var pickOpts=['胜','平','负','胜或平','平或负','胜或负'].map(function(p){return '<option value="'+p+'"'+(t.matches[0].pick===p?' selected':'')+'>'+p+'</option>';}).join('');
+  return '<div style="padding:14px;background:#0f172a;border-radius:0 0 12px 12px">'+
+    '<div class="grid grid-cols-2 md:grid-cols-4 gap-3" style="margin-bottom:12px">'+
+      '<div><label class="text-xs text-slate-400 block mb-1">日期</label><input class="input-field" id="ed-date" value="'+t.date+'"></div>'+
+      '<div><label class="text-xs text-slate-400 block mb-1">类型</label><select class="input-field" id="ed-type" onchange="editTypeChanged()"><option value="单场固定"'+(t.type==='单场固定'?' selected':'')+'>单场固定</option><option value="2x1"'+(t.type==='2x1'?' selected':'')+'>2x1</option><option value="3x1"'+(t.type==='3x1'?' selected':'')+'>3x1</option><option value="4x1"'+(t.type==='4x1'?' selected':'')+'>4x1</option><option value="5x1"'+(t.type==='5x1'?' selected':'')+'>5x1</option><option value="比分2串1"'+(t.type==='比分2串1'?' selected':'')+'>比分2串1</option></select></div>'+
+      '<div><label class="text-xs text-slate-400 block mb-1">倍数</label><input class="input-field" id="ed-multi" type="number" min="1" value="'+t.multi+'" onchange="editStakeAuto()"></div>'+
+      '<div><label class="text-xs text-slate-400 block mb-1">金额(元)</label><input class="input-field" id="ed-stake" type="number" min="2" step="2" value="'+t.stake+'"></div>'+
+    '</div>'+
+    '<div id="ed-matches">'+t.matches.map(function(m,mi){
+      return '<div class="match-box" style="border:1px solid #334155;border-radius:8px;padding:10px;margin-bottom:8px">'+
+        '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">'+
+        '<div><label class="text-xs text-slate-400 block mb-1">主队</label><input class="input-field ed-home" value="'+m.home+'"></div>'+
+        '<div><label class="text-xs text-slate-400 block mb-1">客队</label><input class="input-field ed-away" value="'+m.away+'"></div>'+
+        '<div><label class="text-xs text-slate-400 block mb-1">选项</label><select class="input-field ed-pick">'+['胜','平','负','胜或平','平或负','胜或负'].map(function(p){return '<option value="'+p+'"'+(m.pick===p?' selected':'')+'>'+p+'</option>';}).join('')+'</select></div>'+
+        '<div><label class="text-xs text-slate-400 block mb-1">赔率</label><input class="input-field ed-odds" type="number" step="0.01" min="1" value="'+m.odds+'"></div>'+
+        '<div><label class="text-xs text-slate-400 block mb-1">联赛</label><input class="input-field ed-league" value="'+(m.league||'')+'"></div>'+
+        '<div><label class="text-xs text-slate-400 block mb-1">比分</label><input class="input-field ed-score" placeholder="如 2-1" value="'+(m.score||'')+'"></div>'+
+        '<div><label class="text-xs text-slate-400 block mb-1">赛果</label><select class="input-field ed-result"><option value="pending"'+(m.result==='pending'?' selected':'')+'>⏳待赛</option><option value="win"'+(m.result==='win'?' selected':'')+'>✅中</option><option value="lose"'+(m.result==='lose'?' selected':'')+'>❌错</option></select></div>'+
+        '</div></div>';
+    }).join('')+'</div>'+
+    '<div class="flex gap-2" style="margin-top:4px"><button onclick="saveEdit('+t.id+')" class="btn btn-primary" style="padding:6px 20px;border-radius:8px">💾 保存</button><button onclick="cancelEdit()" style="background:#334155;color:#94a3b8;border:none;border-radius:8px;padding:6px 20px;cursor:pointer">取消</button></div>'+
+    '</div>';
+}
+function editTicket(id){editingId=id;render();}
+function cancelEdit(){editingId=null;render();}
+function editTypeChanged(){
+  // 根据新类型增减场次表单 + 同步扩展/截断 t.matches，保留已填数据
+  var typeVal = document.getElementById('ed-type').value;
+  var n = typeVal === '单场固定' ? 1 : typeVal === '比分2串1' ? 2 : parseInt(typeVal.split('x')[0]) || 2;
+  var container = document.getElementById('ed-matches');
+  var boxes = container.querySelectorAll('.match-box');
+  var cur = boxes.length;
+  // 同步数据数组
+  var t = editingId != null ? data.tickets.find(function(x){ return x.id === editingId; }) : null;
+  if (t) {
+    while (t.matches.length < n) t.matches.push({ home:'', away:'', pick:'胜', odds:0, result:'pending', score:'', league:'' });
+    if (t.matches.length > n) t.matches = t.matches.slice(0, n);
+  }
+  if (n === cur) return;
+  if (n < cur) {
+    // 减少：删掉多余的表单
+    for (var i = cur - 1; i >= n; i--) { boxes[i].remove(); }
+  } else {
+    // 增加：复制最后一个表单结构，清空主客队/比分
+    var template = boxes[cur - 1] ? boxes[cur - 1].cloneNode(true) : null;
+    for (var j = cur; j < n; j++) {
+      if (template) {
+        var clone = template.cloneNode(true);
+        clone.querySelector('.ed-home').value = '';
+        clone.querySelector('.ed-away').value = '';
+        clone.querySelector('.ed-score').value = '';
+        clone.querySelector('.ed-result').value = 'pending';
+        container.appendChild(clone);
+      } else {
+        // 兜底：生成一个空表单
+        container.insertAdjacentHTML('beforeend',
+          '<div class="match-box" style="border:1px solid #334155;border-radius:8px;padding:10px;margin-bottom:8px"><div class="grid grid-cols-2 md:grid-cols-4 gap-3">'+
+          '<div><label class="text-xs text-slate-400 block mb-1">主队</label><input class="input-field ed-home"></div>'+
+          '<div><label class="text-xs text-slate-400 block mb-1">客队</label><input class="input-field ed-away"></div>'+
+          '<div><label class="text-xs text-slate-400 block mb-1">选项</label><select class="input-field ed-pick"><option value="胜">胜</option><option value="平">平</option><option value="负">负</option><option value="胜或平">胜或平</option><option value="平或负">平或负</option><option value="胜或负">胜或负</option></select></div>'+
+          '<div><label class="text-xs text-slate-400 block mb-1">赔率</label><input class="input-field ed-odds" type="number" step="0.01" min="1"></div>'+
+          '<div><label class="text-xs text-slate-400 block mb-1">联赛</label><input class="input-field ed-league"></div>'+
+          '<div><label class="text-xs text-slate-400 block mb-1">比分</label><input class="input-field ed-score" placeholder="如 2-1"></div>'+
+          '<div><label class="text-xs text-slate-400 block mb-1">赛果</label><select class="input-field ed-result"><option value="pending" selected>⏳待赛</option><option value="win">✅中</option><option value="lose">❌错</option></select></div>'+
+          '</div></div>');
+      }
+    }
+  }
+}
+function editStakeAuto(){var m=parseInt(document.getElementById('ed-multi').value)||1;document.getElementById('ed-stake').value=2*m;}
+function saveEdit(tid){
+  const t=data.tickets.find(x=>x.id===tid);if(!t)return;
+  t.date=document.getElementById('ed-date').value||t.date;
+  t.type=document.getElementById('ed-type').value;
+  t.multi=parseInt(document.getElementById('ed-multi').value)||1;
+  t.stake=parseInt(document.getElementById('ed-stake').value)||(2*t.multi);
+  const boxes=document.querySelectorAll('#ed-matches .match-box');
+  if(boxes.length!==t.matches.length){alert('场次数量不一致');return;}
+  boxes.forEach((box,i)=>{
+    const m=t.matches[i];
+    m.home=box.querySelector('.ed-home').value.trim()||m.home;
+    m.away=box.querySelector('.ed-away').value.trim()||m.away;
+    m.pick=box.querySelector('.ed-pick').value;
+    m.odds=parseFloat(box.querySelector('.ed-odds').value)||m.odds;
+    m.league=box.querySelector('.ed-league').value.trim()||'其他';
+    m.score=box.querySelector('.ed-score').value.trim();
+    m.result=box.querySelector('.ed-result').value;
+  });
+  editingId=null;render();
+  if(localStorage.getItem('gh_sync_token')) setTimeout(syncToCloud,500);
+}
+function deleteTicket(tid){
+  if(!confirm('确定删除 #'+tid+' 这张票？此操作不可撤销！'))return;
+  data.tickets=data.tickets.filter(x=>x.id!==tid);
+  if(editingId===tid)editingId=null;
+  render();
+  if(localStorage.getItem('gh_sync_token')) setTimeout(syncToCloud,500);
 }
 
 function updateResult(tid,midx,val){const t=data.tickets.find(x=>x.id===tid);if(t&&t.matches[midx]){t.matches[midx].result=val;render();}}
@@ -882,28 +1073,45 @@ function renderCharts(s) {
     }
   });
   var dates = Object.keys(dayMap).sort();
-  var dayData = dates.map(function(d) { return dayMap[d]; });
+  // 连续日期序列：从最早投注日到今天(BJT)，没投注的日子显示为缺口(null)
+  if (dates.length > 0) {
+    var firstDate = dates[0], lastDate = bjToday();
+    if (lastDate < firstDate) lastDate = firstDate; // 数据异常保护
+    var allDates = [], cur = new Date(firstDate + 'T00:00:00');
+    var lastD = new Date(lastDate + 'T00:00:00');
+    while (cur <= lastD) {
+      var y = cur.getFullYear(), mo = (cur.getMonth()+1).toString().padStart(2,'0'), d = cur.getDate().toString().padStart(2,'0');
+      allDates.push(y + '-' + mo + '-' + d);
+      cur.setDate(cur.getDate() + 1);
+    }
+    dates = allDates;
+  }
+  // null = 无投注日（不画柱子，形成干净缺口）；0 = 真实平局（画灰色小柱）
+  var dayData = dates.map(function(d) { return dayMap.hasOwnProperty(d) ? dayMap[d] : null; });
   var dayLabels = dates.map(function(d) { return d.slice(5); });
   charts.pnl = new Chart(document.getElementById('pnlChart'), {
     type: 'bar',
     data: { labels: dayLabels, datasets: [{ label: '逐日盈亏', data: dayData,
-      backgroundColor: dayData.map(function(v) { return v >= 0 ? '#eab308' : '#ff0000'; }),
+      backgroundColor: dayData.map(function(v) { return v === null ? 'transparent' : (v > 0 ? '#eab308' : v < 0 ? '#ff0000' : '#64748b'); }),
       borderWidth: 0, borderRadius: 4 }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false, spanGaps: false,
       plugins: {
         legend: { display: false },
         tooltip: {
+          filter: function(item) { return item.raw !== null; }, // 无投注日不弹提示，避免误导
           callbacks: {
             title: function(items) { return items[0].label; },
             label: function(ctx) {
               var d = dates[ctx.dataIndex];
               var ms = dayMatches[d];
-              if (!ms || !ms.length) return '';
+              if (!ms || !ms.length) return '无投注';
               return ms;
             },
             afterLabel: function(ctx) {
+              var d = dates[ctx.dataIndex];
+              if (!dayMatches[d] || !dayMatches[d].length) return '当天没有投注';
               return '盈亏: ' + (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y + '元';
             }
           }
@@ -914,11 +1122,11 @@ function renderCharts(s) {
           color: '#e2e8f0',
           font: { weight: 'bold', size: 11 },
           offset: 2,
-          formatter: function(v) { return (v >= 0 ? '+' : '') + v + '元'; }
+          formatter: function(v) { return v === null || v === 0 ? '' : ((v >= 0 ? '+' : '') + v + '元'); }
         }
       },
       scales: {
-        x: { ticks: { color: '#64748b' } },
+        x: { ticks: { color: function(ctx) { return dayData[ctx.index] === null ? '#475569' : '#64748b'; } } },
         y: { grace: '30%', ticks: { color: '#64748b', callback: function(v) { return (v >= 0 ? '+' : '') + v; } } }
       }
     },
@@ -1007,15 +1215,25 @@ function switchTab(name,btn){
 
 
 function pullFromCloud() {
-  fetch('https://raw.githubusercontent.com/7velo/football-dash/main/data.json')
-  .then(function(r) { return r.json(); })
-  .then(function(cloud) {
+  function applyCloud(cloud) {
+    if (!cloud || !Array.isArray(cloud.tickets) || !cloud.tickets.length) { alert('云端数据为空'); return; }
     data.tickets = cloud.tickets;
     data.capital = cloud.capital || 500;
     localStorage.setItem('fb_dashboard_v2', JSON.stringify(data));
     alert('✅ 已从云端拉取 ' + cloud.tickets.length + ' 张票');
     render();
-  }).catch(function(e) { alert('拉取失败: ' + e.message); });
+  }
+  // 通道1: api.github.com（墙内可通）
+  fetch('https://api.github.com/repos/7velo/football-dash/contents/data.json?t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github+json' }, cache: 'no-store' })
+  .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(function(d) { applyCloud(JSON.parse(decodeURIComponent(escape(atob(d.content))))); })
+  .catch(function() {
+    // 通道2: raw.githubusercontent.com
+    return fetch('https://raw.githubusercontent.com/7velo/football-dash/main/data.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(applyCloud)
+    .catch(function(e2) { alert('拉取失败: ' + e2.message); });
+  });
 }
 
 function exportData(){
@@ -1075,6 +1293,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
   rebuildMatchFields();autoCalcStake();
   render();
+  autoSyncFromCloud();
+  startLiveClock();
 });
 </script>
 </body>
