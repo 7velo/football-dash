@@ -607,6 +607,24 @@
           "league": "韩职"
         }
       ]
+    },
+    {
+      "id": 22,
+      "date": "2026-08-01",
+      "type": "单场固定",
+      "multi": 10,
+      "stake": 20,
+      "matches": [
+        {
+          "home": "浦项制铁",
+          "away": "金泉尚武",
+          "pick": "负",
+          "odds": 3.21,
+          "result": "pending",
+          "score": "",
+          "league": "韩职"
+        }
+      ]
     }
   ]
 }
