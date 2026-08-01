@@ -602,8 +602,8 @@
           "away": "金泉尚武",
           "pick": "平",
           "odds": 3.05,
-          "result": "pending",
-          "score": "",
+          "result": "lose",
+          "score": "0:1",
           "league": "韩职"
         }
       ]
