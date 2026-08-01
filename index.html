@@ -52,7 +52,7 @@ body{background:#0f172a;color:#e2e8f0}
 <div class="card text-center"><div class="stat-label">🔥 今日战绩</div><div class="stat-value" id="cToday">0</div><div id="cTodayExtra" style="font-size:10px;color:#64748b;margin-top:-4px"></div></div>
 <div class="card text-center"><div class="stat-label">🎯 串关命中率</div><div class="stat-value neutral" id="cTicketRate">0%</div></div>
 <div class="card text-center"><div class="stat-label">📋 单场命中率</div><div class="stat-value neutral" id="cPickRate">0%</div></div>
-<div class="card text-center"><div class="stat-label">📈 年化率</div><div class="stat-value neutral" id="cAnnual">—</div><div id="cAnnualExtra" style="font-size:10px;color:#64748b;margin-top:-4px"></div></div>
+<div class="card text-center"><div class="stat-label">📊 投注ROI</div><div class="stat-value neutral" id="cROI">—</div><div id="cROIExtra" style="font-size:10px;color:#64748b;margin-top:-4px"></div></div>
 </div>
 <div class="card mb-6">
 <div class="stat-label mb-3">📋 最新投注</div>
@@ -738,25 +738,19 @@ function startLiveClock() {
   setInterval(tick, 1000);
 }
 
-// 年化率：simple=总收益率×365/天数(直观)，exact=盈亏×365/Σ(本金×占用天数)(资金加权精确)
-function calcAnnualized(pnl) {
+// 投注ROI：roi=累计盈亏/总投入(竞彩标准:每投100元拿回多少)，turnover=资金周转率(总投入/本金)
+function calcROI(pnl, totalStake) {
   const CAP = 500;
   const tickets = data.tickets;
-  if (!tickets.length) return { simple: null, exact: null, days: 0 };
+  if (!tickets.length) return { roi: null, turnover: 0, days: 0 };
   const parseDate = s => { const p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); };
   let firstDate = null;
   tickets.forEach(t => { const d = parseDate(t.date); if (!firstDate || d < firstDate) firstDate = d; });
   const today = parseDate(bjToday());
   const days = Math.max(1, Math.round((today - firstDate) / 86400000) + 1);
-  const simple = (pnl / CAP) * (365 / days) * 100;
-  let moneyDays = 0;
-  tickets.forEach(t => {
-    const d = parseDate(t.date);
-    const hold = Math.max(1, Math.round((today - d) / 86400000) + 1);
-    moneyDays += t.stake * hold;
-  });
-  const exact = moneyDays > 0 ? (pnl * 365 / moneyDays) * 100 : 0;
-  return { simple, exact, days };
+  const roi = totalStake > 0 ? (pnl / totalStake) * 100 : 0;
+  const turnover = totalStake / CAP;
+  return { roi, turnover, days };
 }
 
 function loadData() {
@@ -935,18 +929,18 @@ function render() {
   }
   document.getElementById('cTicketRate').textContent=(s.ticketRate*100).toFixed(0)+'%';
   document.getElementById('cPickRate').textContent=(s.pickRate*100).toFixed(0)+'%';
-  // 年化率：主=简单版(总收益率年化)，小字=资金占用加权精确版
-  var annual = calcAnnualized(s.pnl);
-  var cAnn = document.getElementById('cAnnual');
-  if (cAnn) {
-    var cAnnEx = document.getElementById('cAnnualExtra');
-    if (annual.days <= 0) {
-      cAnn.textContent = '—'; cAnn.className = 'stat-value neutral';
-      cAnnEx.textContent = '暂无投注';
+  // 投注ROI：主=盈亏/总投入，小字=资金周转率+周期
+  var roiData = calcROI(s.pnl, s.totalStake);
+  var cRoi = document.getElementById('cROI');
+  if (cRoi) {
+    var cRoiEx = document.getElementById('cROIExtra');
+    if (roiData.days <= 0 || s.totalStake <= 0) {
+      cRoi.textContent = '—'; cRoi.className = 'stat-value neutral';
+      cRoiEx.textContent = '暂无投注';
     } else {
-      cAnn.textContent = (annual.simple >= 0 ? '+' : '') + annual.simple.toFixed(1) + '%';
-      cAnn.className = 'stat-value ' + (annual.simple >= 0 ? 'win' : 'lose');
-      cAnnEx.textContent = '资金加权 ' + (annual.exact >= 0 ? '+' : '') + annual.exact.toFixed(1) + '% · ' + annual.days + '天';
+      cRoi.textContent = (roiData.roi >= 0 ? '+' : '') + roiData.roi.toFixed(1) + '%';
+      cRoi.className = 'stat-value ' + (roiData.roi >= 0 ? 'win' : 'lose');
+      cRoiEx.textContent = '资金周转 ' + roiData.turnover.toFixed(2) + '次 · ' + roiData.days + '天';
     }
   }
   const loss=Math.abs(s.pnl);
