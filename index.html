@@ -718,22 +718,20 @@ const DEFAULT_DATA = {
 let data, charts = {};
 let editingId = null;
 
-// 北京时间工具：返回当前北京日期 YYYY-MM-DD
+// 北京时间工具：返回当前北京日期 YYYY-MM-DD（Intl 指定 Asia/Shanghai，任何设备时区都正确）
 function bjToday() {
-  const now = new Date();
-  const bj = new Date(now.getTime() + 8 * 3600 * 1000);
-  return bj.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
-// 实时时钟：每秒刷新北京时间
+// 实时时钟：每秒刷新北京时间（Intl 指定 Asia/Shanghai，任何设备时区都正确）
 function startLiveClock() {
   const el = document.getElementById('liveClock');
   if (!el) return;
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   function tick() {
-    const now = new Date();
-    const bj = new Date(now.getTime() + 8 * 3600 * 1000);
-    const y = bj.getFullYear(), mo = (bj.getMonth()+1).toString().padStart(2,'0'), d = bj.getDate().toString().padStart(2,'0');
-    const h = bj.getHours().toString().padStart(2,'0'), mi = bj.getMinutes().toString().padStart(2,'0'), s = bj.getSeconds().toString().padStart(2,'0');
-    el.textContent = '🕐 ' + y + '-' + mo + '-' + d + ' ' + h + ':' + mi + ':' + s + ' BJT';
+    const parts = fmt.formatToParts(new Date());
+    const get = t => (parts.find(p => p.type === t) || {}).value || '00';
+    let h = get('hour'); if (h === '24') h = '00'; // 深夜 Intl 可能给 24，修正为 00
+    el.textContent = '🕐 ' + get('year') + '-' + get('month') + '-' + get('day') + ' ' + h + ':' + get('minute') + ':' + get('second') + ' BJT';
   }
   tick();
   setInterval(tick, 1000);
