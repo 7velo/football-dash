@@ -656,9 +656,9 @@
           "away": "特罗姆瑟",
           "pick": "负",
           "odds": 1.82,
-          "result": "pending",
-          "score": "",
-          "league": "其他"
+          "result": "win",
+          "score": "2:6",
+          "league": "挪超"
         }
       ]
     }
