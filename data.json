@@ -638,9 +638,27 @@
           "away": "马尔默",
           "pick": "胜",
           "odds": 1.93,
+          "result": "win",
+          "score": "1：2",
+          "league": "瑞超"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "date": "2026-08-02",
+      "type": "单场固定",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "奥勒松",
+          "away": "特罗姆瑟",
+          "pick": "负",
+          "odds": 1.82,
           "result": "pending",
           "score": "",
-          "league": "瑞超"
+          "league": "其他"
         }
       ]
     }
