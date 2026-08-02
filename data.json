@@ -625,6 +625,24 @@
           "league": "韩职"
         }
       ]
+    },
+    {
+      "id": 23,
+      "date": "2026-08-02",
+      "type": "单场固定",
+      "multi": 10,
+      "stake": 20,
+      "matches": [
+        {
+          "home": "布洛马波卡纳",
+          "away": "马尔默",
+          "pick": "胜",
+          "odds": 1.93,
+          "result": "pending",
+          "score": "",
+          "league": "瑞超"
+        }
+      ]
     }
   ]
 }
