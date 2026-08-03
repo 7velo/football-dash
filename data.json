@@ -661,6 +661,35 @@
           "league": "挪超"
         }
       ]
+    },
+    {
+      "id": 25,
+      "date": "2026-08-03",
+      "type": "2x1",
+      "multi": 2,
+      "stake": 16,
+      "matches": [
+        {
+          "home": "塞伊奈",
+          "away": "赫尔辛基",
+          "pick": "胜或平",
+          "odds": 3.3,
+          "odds2": 3.87,
+          "result": "pending",
+          "score": "",
+          "league": "芬超"
+        },
+        {
+          "home": "左加顿斯",
+          "away": "韦斯特罗",
+          "pick": "胜或平",
+          "odds": 1.38,
+          "odds2": 4.5,
+          "result": "pending",
+          "score": "",
+          "league": "瑞超"
+        }
+      ]
     }
   ]
 }
