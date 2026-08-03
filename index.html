@@ -824,6 +824,13 @@ function autoSyncFromCloud() {
 function comboCount(t) {
   return t.matches.reduce(function(s, m) { return s * (m.pick && m.pick.includes('或') ? 2 : 1); }, 1);
 }
+// 结算日 = 投注日 +1（竞彩开奖是次日）
+function settlementDate(betDateStr) {
+  var d = new Date(betDateStr + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  var y = d.getFullYear(), mo = (d.getMonth()+1).toString().padStart(2,'0'), dd = d.getDate().toString().padStart(2,'0');
+  return y + '-' + mo + '-' + dd;
+}
 function isDouble(m) { return !!(m.pick && m.pick.includes('或')); }
 // 双选场次的命中赔率：有实际命中选项(hit)用对应赔率；无hit保守取双选中较低赔率(宁低勿高)；历史数据无odds2时用odds
 function pickOdds(m) {
@@ -941,10 +948,10 @@ function render() {
   const pel=document.getElementById('cPnl');
   pel.textContent=(s.pnl>=0?'+':'')+Math.round(s.pnl);
   pel.className='stat-value '+(s.pnl>=0?'win':'lose');
-  // 今日战绩：按真实北京日期计算，今天有结算票才显示战绩，否则为 0
+  // 今日战绩：按开奖日(投注日+1)计算——今天开奖的票才算今日战绩
   var todayDate = bjToday();
   var todayPnl = 0;
-  var todayTickets = data.tickets.filter(function(t) { return t.date === todayDate && !t.matches.some(function(m) { return m.result === 'pending'; }); });
+  var todayTickets = data.tickets.filter(function(t) { return settlementDate(t.date) === todayDate && !t.matches.some(function(m) { return m.result === 'pending'; }); });
   var todayStake = 0, todayPayout = 0;
   todayTickets.forEach(function(t) {
     todayStake += t.stake;
@@ -964,10 +971,10 @@ function render() {
       // 找最近待赛票的日期
       var pendingTickets = data.tickets.filter(function(t) { return t.matches.some(function(m) { return m.result === 'pending'; }); });
       pendingTickets.forEach(function(t) { if (t.date > pendingDate) pendingDate = t.date; });
-      pStr = ' | 待赛' + s.pending + '元';
+      pStr = ' | 待赛' + s.pending + '元(' + settlementDate(pendingDate).slice(5) + '开奖)';
     }
     var noBetToday = todayTickets.length === 0;
-    cEx.textContent = noBetToday ? (dispDate + ' 今日无投注' + pStr) : (dispDate + '结算' + pStr);
+    cEx.textContent = noBetToday ? (dispDate + ' 今日无开奖' + pStr) : (dispDate + ' 开奖结算' + pStr);
   }
   document.getElementById('cTicketRate').textContent=(s.ticketRate*100).toFixed(0)+'%';
   document.getElementById('cPickRate').textContent=(s.pickRate*100).toFixed(0)+'%';
@@ -1141,25 +1148,35 @@ function updateScore(tid,midx,val){
 function renderCharts(s) {
   const opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8'}}},scales:{x:{ticks:{color:'#64748b'}},y:{ticks:{color:'#64748b'}}}};
   if(charts.pnl)charts.pnl.destroy();
-  // 按日期汇总盈亏+比赛信息
-  var dayMap = {}, dayMatches = {};
+  // 按结算日(投注日+1)汇总盈亏；待赛票在其开奖日显示"等待结果"灰柱
+  var dayMap = {}, dayMatches = {}, pendMap = {}, pendMatches = {};
   data.tickets.forEach(function(t) {
-    if (!t.matches.some(function(m) { return m.result === 'pending'; })) {
-      var aw = t.matches.every(function(m) { return m.result === 'win'; });
-      var pay = calcPayout(t, aw);
-      if (!dayMap[t.date]) { dayMap[t.date] = 0; dayMatches[t.date] = []; }
-      dayMap[t.date] += pay - t.stake;
-      dayMatches[t.date].push('--- #' + t.id + ' ' + t.type + ' ---');
+    var sd = settlementDate(t.date);
+    var hp = t.matches.some(function(m) { return m.result === 'pending'; });
+    if (hp) {
+      if (!pendMap[sd]) { pendMap[sd] = 0; pendMatches[sd] = []; }
+      pendMap[sd] += t.stake;
+      pendMatches[sd].push('--- #' + t.id + ' ' + t.type + ' · 待赛' + t.stake + '元 · ' + t.date + '投 ---');
       t.matches.forEach(function(m) {
-        var icon = m.result === 'win' ? '✅' : '❌';
-        dayMatches[t.date].push(icon + ' ' + m.home + ' vs ' + m.away + ' (猜' + (m.pick.includes('或')?'双选':m.pick) + ')');
+        pendMatches[sd].push('⏳ ' + m.home + ' vs ' + m.away + ' (猜' + (m.pick.includes('或')?'双选':m.pick) + ')');
       });
+      return;
     }
+    var aw = t.matches.every(function(m) { return m.result === 'win'; });
+    var pay = calcPayout(t, aw);
+    if (!dayMap[sd]) { dayMap[sd] = 0; dayMatches[sd] = []; }
+    dayMap[sd] += pay - t.stake;
+    dayMatches[sd].push('--- #' + t.id + ' ' + t.type + ' ---');
+    t.matches.forEach(function(m) {
+      var icon = m.result === 'win' ? '✅' : '❌';
+      dayMatches[sd].push(icon + ' ' + m.home + ' vs ' + m.away + ' (猜' + (m.pick.includes('或')?'双选':m.pick) + ')');
+    });
   });
-  var dates = Object.keys(dayMap).sort();
-  // 连续日期序列：从最早投注日到今天(BJT)，没投注的日子显示为缺口(null)
+  var dates = Object.keys(dayMap).concat(Object.keys(pendMap));
+  // 连续日期序列：从最早结算日到今天(BJT)及所有待赛开奖日
   if (dates.length > 0) {
-    var firstDate = dates[0], lastDate = bjToday();
+    var firstDate = dates.slice().sort()[0], lastDate = bjToday();
+    Object.keys(pendMap).forEach(function(d) { if (d > lastDate) lastDate = d; }); // 待赛开奖日在未来也要画
     if (lastDate < firstDate) lastDate = firstDate; // 数据异常保护
     var allDates = [], cur = new Date(firstDate + 'T00:00:00');
     var lastD = new Date(lastDate + 'T00:00:00');
@@ -1170,15 +1187,18 @@ function renderCharts(s) {
     }
     dates = allDates;
   }
-  // null = 无投注日（不画柱子，形成干净缺口）；0 = 真实平局（画灰色小柱）
+  // null = 无投注日（不画柱子）；0 = 真实平局（画灰色小柱）
   var dayData = dates.map(function(d) { return dayMap.hasOwnProperty(d) ? dayMap[d] : null; });
+  var pendData = dates.map(function(d) { return pendMap.hasOwnProperty(d) ? pendMap[d] : null; });
   var dayLabels = dates.map(function(d) { return d.slice(5); });
   charts.pnl = new Chart(document.getElementById('pnlChart'), {
     type: 'bar',
-    data: { labels: dayLabels, datasets: [{ label: '逐日盈亏', data: dayData,
-      backgroundColor: dayData.map(function(v) { return v === null ? 'transparent' : (v > 0 ? '#eab308' : v < 0 ? '#ff0000' : '#64748b'); }),
-      borderWidth: 0, borderRadius: 4 }]
-    },
+    data: { labels: dayLabels, datasets: [
+      { label: '逐日盈亏', data: dayData,
+        backgroundColor: dayData.map(function(v) { return v === null ? 'transparent' : (v > 0 ? '#eab308' : v < 0 ? '#ff0000' : '#64748b'); }),
+        borderWidth: 0, borderRadius: 4 },
+      { label: '待赛', data: pendData, backgroundColor: '#64748b44', borderColor: '#64748b', borderWidth: 1, borderRadius: 4 }
+    ]},
     options: {
       responsive: true, maintainAspectRatio: false, spanGaps: false,
       plugins: {
@@ -1186,14 +1206,18 @@ function renderCharts(s) {
         tooltip: {
           filter: function(item) { return item.raw !== null; }, // 无投注日不弹提示，避免误导
           callbacks: {
-            title: function(items) { return items[0].label; },
+            title: function(items) { return items[0].label + (items[0].datasetIndex === 1 ? ' (开奖日)' : ' (结算日)'); },
             label: function(ctx) {
               var d = dates[ctx.dataIndex];
-              var ms = dayMatches[d];
+              var ms = ctx.datasetIndex === 1 ? pendMatches[d] : dayMatches[d];
               if (!ms || !ms.length) return '无投注';
               return ms;
             },
             afterLabel: function(ctx) {
+              if (ctx.datasetIndex === 1) {
+                var d = dates[ctx.dataIndex];
+                return '待赛 ' + ctx.parsed.y + '元 · 开奖后结算';
+              }
               var d = dates[ctx.dataIndex];
               if (!dayMatches[d] || !dayMatches[d].length) return '当天没有投注';
               return '盈亏: ' + (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y + '元';
@@ -1201,12 +1225,16 @@ function renderCharts(s) {
           }
         },
         datalabels: {
-          anchor: function(ctx) { return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start'; },
-          align: function(ctx) { return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start'; },
+          anchor: function(ctx) { return ctx.datasetIndex === 1 ? 'end' : (ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start'); },
+          align: function(ctx) { return ctx.datasetIndex === 1 ? 'end' : (ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start'); },
           color: '#e2e8f0',
           font: { weight: 'bold', size: 11 },
           offset: 2,
-          formatter: function(v) { return v === null || v === 0 ? '' : ((v >= 0 ? '+' : '') + v + '元'); }
+          formatter: function(v, ctx) {
+            if (v === null || v === 0) return '';
+            if (ctx.datasetIndex === 1) return '⏳等待结果';
+            return (v >= 0 ? '+' : '') + v + '元';
+          }
         }
       },
       scales: {
@@ -1275,16 +1303,18 @@ function renderAnalysis(s) {
 }
 
 function renderPlan(s) {
+  // 验证期进度 = 实际日历天数/90天（2026-07-21启动），随投注进行自动推进
+  var vDays = Math.min(90, Math.max(1, Math.floor((new Date() - new Date('2026-07-21'))/86400000) + 1));
   const phases=[
-    {name:'验证期',time:'第1-3个月',cap:'500元',strategy:'小注试探，2串1为主',target:'命中率≥35%',status:'进行中',pct:2/90},
+    {name:'验证期',time:'第1-3个月',cap:'500元',strategy:'小注试探，2串1为主',target:'命中率≥35%',status:'进行中',pct:vDays/90},
     {name:'加码期',time:'第4-6个月',cap:'2000-3000元',strategy:'验证通过后加码',target:'月收益率≥8%',status:'🔒',pct:0},
     {name:'扩张期',time:'第7-12个月',cap:'每月+1000元',strategy:'持续追加',target:'年收入10万+',status:'🔒',pct:0}
   ];
   if(s.ticketRate>=0.35)phases[1].status='🔓 可解锁';
   document.getElementById('phasePlan').innerHTML=phases.map(p=>'<div class="p-4 bg-slate-800/50 rounded-xl border '+(p.status.includes('行中')?'border-blue-500/30':'border-slate-700/50')+'"><div class="flex justify-between items-center mb-2"><span class="font-bold text-lg">'+p.name+'</span><span class="chip '+(p.status.includes('行中')||p.status.includes('解锁')?'chip-win':'chip-lose')+'">'+p.status+'</span></div><div class="grid grid-cols-2 gap-2 text-sm"><div><span class="text-slate-400">时间:</span> '+p.time+'</div><div><span class="text-slate-400">本金:</span> '+p.cap+'</div><div><span class="text-slate-400">策略:</span> '+p.strategy+'</div><div><span class="text-slate-400">目标:</span> '+p.target+'</div></div>'+(p.pct>0?'<div class="progress-bar mt-3"><div class="progress-fill" style="width:'+(p.pct*100)+'%;background:#3b82f6"></div></div><div class="text-xs text-slate-500 mt-1">进度 '+(p.pct*100).toFixed(0)+'%</div>':'')+'</div>').join('');
   document.getElementById('goalTracking').innerHTML=
-    '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">串关命中率</div><div class="text-2xl font-black mt-1 '+(s.ticketRate>=0.35?'win':'neutral')+'">'+(s.ticketRate*100).toFixed(0)+'%</div><div class="text-xs text-slate-400 mt-1">目标 35% · '+s.totalTickets+' 票</div><div class="progress-bar mt-2"><div class="progress-fill" style="width:'+Math.min(100,s.ticketRate/0.35*100)+'%;background:'+(s.ticketRate>=0.35?'#eab308':'#f59e0b')+'"></div></div></div>'+
-    '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">单场命中率</div><div class="text-2xl font-black mt-1 '+(s.pickRate>=0.4?'win':'neutral')+'">'+(s.pickRate*100).toFixed(0)+'%</div><div class="text-xs text-slate-400 mt-1">目标 40% · '+s.totalPicks+' 场</div><div class="progress-bar mt-2"><div class="progress-fill" style="width:'+Math.min(100,s.pickRate/0.4*100)+'%;background:'+(s.pickRate>=0.4?'#eab308':'#f59e0b')+'"></div></div></div>'+
+    '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">串关命中率</div><div class="text-2xl font-black mt-1 '+(s.ticketRate>=0.35?'win':'neutral')+'">'+s.wonTickets+'/'+s.totalTickets+'</div><div class="text-xs text-slate-400 mt-1">命中率 '+(s.ticketRate*100).toFixed(0)+'% · 目标 35%</div><div class="progress-bar mt-2"><div class="progress-fill" style="width:'+Math.min(100,s.ticketRate/0.35*100)+'%;background:'+(s.ticketRate>=0.35?'#eab308':'#f59e0b')+'"></div></div></div>'+
+    '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">单场命中率</div><div class="text-2xl font-black mt-1 '+(s.pickRate>=0.4?'win':'neutral')+'">'+s.winPicks+'/'+s.totalPicks+'</div><div class="text-xs text-slate-400 mt-1">命中率 '+(s.pickRate*100).toFixed(0)+'% · 目标 40%</div><div class="progress-bar mt-2"><div class="progress-fill" style="width:'+Math.min(100,s.pickRate/0.4*100)+'%;background:'+(s.pickRate>=0.4?'#eab308':'#f59e0b')+'"></div></div></div>'+
     '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">当前可用</div><div class="text-2xl font-black mt-1 win">'+Math.round(s.available)+' 元</div><div class="text-xs text-slate-400 mt-1">本金 500 元 · 累计 '+Math.round(Math.abs(s.pnl))+' 元'+(s.pending>0?' · 待赛 '+s.pending+' 元':'')+'</div></div>'+
     '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">验证期进度</div><div class="text-2xl font-black mt-1 text-blue-400">' + Math.min(90, Math.max(1, Math.floor((new Date() - new Date('2026-07-21'))/86400000) + 1)) + '天 / 90天</div><div class="progress-bar mt-2"><div class="progress-fill" style="width:' + (Math.min(90, Math.max(1, Math.floor((new Date() - new Date('2026-07-21'))/86400000) + 1)) / 90 * 100) + '%;background:#3b82f6"></div></div></div>';
 }
