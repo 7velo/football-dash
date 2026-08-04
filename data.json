@@ -675,8 +675,8 @@
           "pick": "胜或平",
           "odds": 3.3,
           "odds2": 3.87,
-          "result": "pending",
-          "score": "",
+          "result": "win",
+          "score": "3:0",
           "league": "芬超"
         },
         {
@@ -685,8 +685,8 @@
           "pick": "胜或平",
           "odds": 1.38,
           "odds2": 4.5,
-          "result": "pending",
-          "score": "",
+          "result": "win",
+          "score": "6:0",
           "league": "瑞超"
         }
       ]
