@@ -704,8 +704,8 @@
           "pick": "平或负",
           "odds": 3.55,
           "odds2": 2.5,
-          "result": "pending",
-          "score": "",
+          "result": "win",
+          "score": "1:2",
           "league": "欧冠"
         },
         {
@@ -714,8 +714,8 @@
           "pick": "平或负",
           "odds": 3.28,
           "odds2": 3.08,
-          "result": "pending",
-          "score": "",
+          "result": "win",
+          "score": "3:3",
           "league": "欧冠"
         }
       ]
