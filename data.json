@@ -712,8 +712,8 @@
           "home": "米亚尔比",
           "away": "布拉达斯",
           "pick": "负",
-          "odds": 3.28,
-          "odds2": 3.08,
+          "odds": 3.08,
+          "odds2": null,
           "result": "win",
           "score": "1:2",
           "league": "欧冠"
