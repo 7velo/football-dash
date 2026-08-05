@@ -774,6 +774,39 @@
           "hit": "负"
         }
       ]
+    },
+    {
+      "id": 27,
+      "date": "2026-08-05",
+      "type": "2x1",
+      "multi": 10,
+      "stake": 80,
+      "matches": [
+        {
+          "home": "奥胡斯",
+          "away": "萨巴赫",
+          "pick": "胜或平",
+          "odds": 1.63,
+          "odds2": 3.7,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "欧冠"
+        },
+        {
+          "home": "弗鲁米嫩",
+          "away": "达伽马",
+          "pick": "胜或平",
+          "odds": 1.9,
+          "odds2": 2.9,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "巴西杯"
+        }
+      ]
     }
   ]
 }
