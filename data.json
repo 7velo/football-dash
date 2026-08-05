@@ -696,14 +696,14 @@
       "date": "2026-08-04",
       "type": "2x1",
       "multi": 5,
-      "stake": 10,
+      "stake": 20,
       "matches": [
         {
           "home": "圣吉尔联合",
           "away": "博德闪耀",
           "pick": "平",
           "odds": 3.55,
-          "odds2": null,
+          "odds2": 2.5,
           "result": "win",
           "score": "3:3",
           "league": "欧冠"
@@ -711,9 +711,9 @@
         {
           "home": "米亚尔比",
           "away": "布拉达斯",
-          "pick": "负",
-          "odds": 3.08,
-          "odds2": null,
+          "pick": "平或负",
+          "odds": 3.28,
+          "odds2": 3.08,
           "result": "win",
           "score": "1:2",
           "league": "欧冠"
