@@ -696,12 +696,12 @@
       "date": "2026-08-04",
       "type": "2x1",
       "multi": 5,
-      "stake": 20,
+      "stake": 40,
       "matches": [
         {
           "home": "圣吉尔联合",
           "away": "博德闪耀",
-          "pick": "平",
+          "pick": "平或负",
           "odds": 3.55,
           "odds2": 2.5,
           "result": "win",
