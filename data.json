@@ -690,6 +690,35 @@
           "league": "瑞超"
         }
       ]
+    },
+    {
+      "id": 26,
+      "date": "2026-08-04",
+      "type": "2x1",
+      "multi": 5,
+      "stake": 40,
+      "matches": [
+        {
+          "home": "圣吉尔联合",
+          "away": "博德闪耀",
+          "pick": "平或负",
+          "odds": 3.55,
+          "odds2": 2.5,
+          "result": "pending",
+          "score": "",
+          "league": "欧冠"
+        },
+        {
+          "home": "米亚尔比",
+          "away": "布拉达斯",
+          "pick": "平或负",
+          "odds": 3.28,
+          "odds2": 3.08,
+          "result": "pending",
+          "score": "",
+          "league": "欧冠"
+        }
+      ]
     }
   ]
 }
