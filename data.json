@@ -141,7 +141,7 @@
           "odds": 3.25,
           "score": "3-1",
           "result": "lose",
-          "league": "K联赛",
+          "league": "韩职",
           "hit": "胜"
         }
       ]
@@ -170,7 +170,7 @@
           "odds": 1.49,
           "score": "2-0",
           "result": "win",
-          "league": "瑞典超",
+          "league": "瑞超",
           "hit": "胜"
         }
       ]
@@ -199,7 +199,7 @@
           "odds": 3.95,
           "score": "2-0",
           "result": "lose",
-          "league": "瑞典超",
+          "league": "瑞超",
           "hit": "胜"
         }
       ]
@@ -335,7 +335,7 @@
           "odds": 3.95,
           "score": "2-0",
           "result": "lose",
-          "league": "瑞典超",
+          "league": "瑞超",
           "hit": "胜"
         },
         {
@@ -384,7 +384,7 @@
           "odds": 1.32,
           "score": "1-1",
           "result": "lose",
-          "league": "瑞典超",
+          "league": "瑞超",
           "hit": "平"
         },
         {
@@ -453,7 +453,7 @@
           "odds": 1.49,
           "score": "0-1",
           "result": "win",
-          "league": "瑞典超",
+          "league": "瑞超",
           "hit": "负"
         }
       ]
@@ -472,7 +472,7 @@
           "odds": 2.85,
           "score": "0-2",
           "result": "lose",
-          "league": "K联赛",
+          "league": "韩职",
           "hit": "负"
         }
       ]
@@ -501,7 +501,7 @@
           "odds": 4.4,
           "score": "0-0",
           "result": "win",
-          "league": "瑞典超",
+          "league": "瑞超",
           "hit": "平"
         }
       ]
@@ -530,7 +530,7 @@
           "odds": 8,
           "score": "0-0",
           "result": "lose",
-          "league": "瑞典超",
+          "league": "瑞超",
           "hit": "平"
         }
       ]
