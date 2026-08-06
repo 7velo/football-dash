@@ -807,6 +807,39 @@
           "league": "巴西杯"
         }
       ]
+    },
+    {
+      "id": 28,
+      "date": "2026-08-06",
+      "type": "2x1",
+      "multi": 5,
+      "stake": 20,
+      "matches": [
+        {
+          "home": "库奥皮奥",
+          "away": "克拉约瓦大学",
+          "pick": "胜",
+          "odds": 3.25,
+          "odds2": null,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "欧罗巴"
+        },
+        {
+          "home": "维多利亚",
+          "away": "巴拉那",
+          "pick": "平或负",
+          "odds": 3.15,
+          "odds2": 2.52,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "巴西杯"
+        }
+      ]
     }
   ]
 }
