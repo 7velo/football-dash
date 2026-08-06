@@ -1486,8 +1486,30 @@ function renderPlan(s) {
     {name:'加码期',time:'第4-6个月',cap:'2000-3000元',strategy:'验证通过后加码',target:'月收益率≥8%',status:'🔒',pct:0},
     {name:'扩张期',time:'第7-12个月',cap:'每月+1000元',strategy:'持续追加',target:'年收入10万+',status:'🔒',pct:0}
   ];
-  if(s.ticketRate>=0.35)phases[1].status='🔓 可解锁';
-  document.getElementById('phasePlan').innerHTML=phases.map(p=>'<div class="p-4 bg-slate-800/50 rounded-xl border '+(p.status.includes('行中')?'border-blue-500/30':'border-slate-700/50')+'"><div class="flex justify-between items-center mb-2"><span class="font-bold text-lg">'+p.name+'</span><span class="chip '+(p.status.includes('行中')||p.status.includes('解锁')?'chip-win':'chip-lose')+'">'+p.status+'</span></div><div class="grid grid-cols-2 gap-2 text-sm"><div><span class="text-slate-400">时间:</span> '+p.time+'</div><div><span class="text-slate-400">本金:</span> '+p.cap+'</div><div><span class="text-slate-400">策略:</span> '+p.strategy+'</div><div><span class="text-slate-400">目标:</span> '+p.target+'</div></div>'+(p.pct>0?'<div class="progress-bar mt-3"><div class="progress-fill" style="width:'+(p.pct*100)+'%;background:#3b82f6"></div></div><div class="text-xs text-slate-500 mt-1">进度 '+(p.pct*100).toFixed(0)+'%</div>':'')+'</div>').join('');
+  // ===== 加码门槛：3条同时满足才解锁 =====
+  // 门槛1: 串关命中率≥35%（连续30票滚动窗口，不满30票不计数）
+  var settled = data.tickets.filter(function(t){ return !t.matches.some(function(m){ return m.result==='pending'; }); })
+    .sort(function(a,b){ return a.id-b.id; }).slice(-30);
+  var w30 = settled.filter(function(t){ return t.matches.every(function(m){ return m.result==='win'; }); }).length;
+  var n30 = settled.length;
+  var gate1ok = n30 >= 30 && w30/n30 >= 0.35;
+  var gate1txt = '串关命中率≥35% (30票滚动): ' + w30 + '/' + n30 + ' = ' + Math.round(w30/n30*100) + '%' + (n30<30 ? ' · 差' + (30-n30) + '票满窗' : '');
+  // 门槛2: 累计盈亏转正（含待赛扣款口径）
+  var gate2ok = s.pnl > 0;
+  var gate2txt = '累计盈亏转正: ' + (s.pnl>=0?'+':'') + Math.round(s.pnl) + '元';
+  // 门槛3: 验证期至少跑满1个月(30天)
+  var gate3ok = vDays >= 30;
+  var gate3txt = '验证期满1个月: ' + vDays + '/30天';
+  var gateAll = gate1ok && gate2ok && gate3ok;
+  phases[1].status = gateAll ? '🔓 可解锁' : '🔒 未解锁';
+  phases[1].gate = '<div class="mt-3 pt-3 border-t border-slate-700/50 text-xs space-y-1">' +
+    '<div class="font-semibold text-slate-400 mb-1">🚧 加码门槛（3条同时满足）</div>' +
+    '<div class="'+(gate1ok?'win':'text-red-400')+'">'+(gate1ok?'✅':'❌')+' '+gate1txt+'</div>' +
+    '<div class="'+(gate2ok?'win':'text-red-400')+'">'+(gate2ok?'✅':'❌')+' '+gate2txt+'</div>' +
+    '<div class="'+(gate3ok?'win':'text-red-400')+'">'+(gate3ok?'✅':'❌')+' '+gate3txt+'</div>' +
+    (gateAll ? '<div class="win font-bold mt-1">🎉 三条全部达成，可进入加码期（建议仍从小注起步）</div>' : '<div class="text-slate-500 mt-1">未满足前维持小注 2-12元</div>') +
+    '</div>';
+  document.getElementById('phasePlan').innerHTML=phases.map(p=>'<div class="p-4 bg-slate-800/50 rounded-xl border '+(p.status.includes('行中')?'border-blue-500/30':'border-slate-700/50')+'"><div class="flex justify-between items-center mb-2"><span class="font-bold text-lg">'+p.name+'</span><span class="chip '+(p.status.includes('行中')||p.status.includes('解锁')?'chip-win':'chip-lose')+'">'+p.status+'</span></div><div class="grid grid-cols-2 gap-2 text-sm"><div><span class="text-slate-400">时间:</span> '+p.time+'</div><div><span class="text-slate-400">本金:</span> '+p.cap+'</div><div><span class="text-slate-400">策略:</span> '+p.strategy+'</div><div><span class="text-slate-400">目标:</span> '+p.target+'</div></div>'+(p.pct>0?'<div class="progress-bar mt-3"><div class="progress-fill" style="width:'+(p.pct*100)+'%;background:#3b82f6"></div></div><div class="text-xs text-slate-500 mt-1">进度 '+(p.pct*100).toFixed(0)+'%</div>':'')+(p.gate||'')+'</div>').join('');
   document.getElementById('goalTracking').innerHTML=
     '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">串关命中率</div><div class="text-2xl font-black mt-1 '+(s.ticketRate>=0.35?'win':'neutral')+'">'+s.wonTickets+'/'+s.totalTickets+'</div><div class="text-xs text-slate-400 mt-1">命中率 '+(s.ticketRate*100).toFixed(0)+'% · 目标 35%</div><div class="progress-bar mt-2"><div class="progress-fill" style="width:'+Math.min(100,s.ticketRate/0.35*100)+'%;background:'+(s.ticketRate>=0.35?'#eab308':'#f59e0b')+'"></div></div></div>'+
     '<div class="p-3 bg-slate-800/50 rounded-lg"><div class="text-sm font-semibold">单场命中率</div><div class="text-2xl font-black mt-1 '+(s.pickRate>=0.4?'win':'neutral')+'">'+s.winPicks+'/'+s.totalPicks+'</div><div class="text-xs text-slate-400 mt-1">命中率 '+(s.pickRate*100).toFixed(0)+'% · 目标 40%</div><div class="progress-bar mt-2"><div class="progress-fill" style="width:'+Math.min(100,s.pickRate/0.4*100)+'%;background:'+(s.pickRate>=0.4?'#eab308':'#f59e0b')+'"></div></div></div>'+
