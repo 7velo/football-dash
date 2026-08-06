@@ -789,9 +789,9 @@
           "odds": 1.63,
           "odds2": 3.7,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "win",
+          "hit": "胜",
+          "score": "2：1",
           "league": "欧冠"
         },
         {
@@ -801,9 +801,9 @@
           "odds": 1.9,
           "odds2": 2.9,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "lose",
+          "hit": "负",
+          "score": "1：3",
           "league": "巴西杯"
         }
       ]
