@@ -822,9 +822,9 @@
           "odds": 3.25,
           "odds2": null,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "lose",
+          "hit": "平",
+          "score": "1:1",
           "league": "欧罗巴"
         },
         {
@@ -834,10 +834,31 @@
           "odds": 3.15,
           "odds2": 2.52,
           "odds3": null,
+          "result": "lose",
+          "hit": "胜",
+          "score": "4:0",
+          "league": "巴西杯"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "date": "2026-08-07",
+      "type": "单场固定",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "大阪钢巴",
+          "away": "浦和红钻",
+          "pick": "胜",
+          "odds": 2.19,
+          "odds2": null,
+          "odds3": null,
           "result": "pending",
           "hit": null,
           "score": "",
-          "league": "巴西杯"
+          "league": "日职"
         }
       ]
     }
