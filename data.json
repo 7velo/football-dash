@@ -861,6 +861,39 @@
           "league": "日职"
         }
       ]
+    },
+    {
+      "id": 30,
+      "date": "2026-08-07",
+      "type": "2x1",
+      "multi": 3,
+      "stake": 24,
+      "matches": [
+        {
+          "home": "桑那菲尤尔",
+          "away": "奥斯陆FUM",
+          "pick": "胜或平",
+          "odds": 1.81,
+          "odds2": 3.55,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "挪超"
+        },
+        {
+          "home": "塞伊奈",
+          "away": "赫尔辛基火花",
+          "pick": "平或负",
+          "odds": 3.55,
+          "odds2": 2.9,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "芬超"
+        }
+      ]
     }
   ]
 }
