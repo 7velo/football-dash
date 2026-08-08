@@ -857,8 +857,9 @@
           "odds3": null,
           "result": "win",
           "hit": "胜",
-          "score": "4-3",
-          "league": "日职"
+          "score": "4:3",
+          "league": "日职",
+          "_conflict": " 云端#4-3"
         }
       ]
     },
@@ -876,9 +877,9 @@
           "odds": 1.81,
           "odds2": 3.55,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "lose",
+          "hit": "负",
+          "score": "0:1",
           "league": "挪超"
         },
         {
@@ -888,9 +889,9 @@
           "odds": 3.55,
           "odds2": 2.9,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "win",
+          "hit": "平",
+          "score": "2:2",
           "league": "芬超"
         }
       ]
@@ -909,7 +910,7 @@
           "odds": 1.78,
           "result": "lose",
           "score": "0-0",
-          "league": "K联赛",
+          "league": "韩职",
           "hit": "平"
         }
       ]
@@ -926,11 +927,14 @@
           "away": "埃夫斯堡",
           "pick": "负",
           "odds": 2.61,
-          "result": "pending",
-          "score": "",
-          "league": "瑞典超"
+          "result": "win",
+          "score": "0:1",
+          "league": "瑞超",
+          "hit": "负"
         }
-      ]
+      ],
+      "lastModified": "2026-08-08T18:30:34.397Z"
     }
-  ]
+  ],
+  "deletedIds": []
 }
