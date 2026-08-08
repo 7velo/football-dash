@@ -855,9 +855,9 @@
           "odds": 2.19,
           "odds2": null,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "win",
+          "hit": "胜",
+          "score": "4-3",
           "league": "日职"
         }
       ]
@@ -909,12 +909,10 @@
           "odds": 1.78,
           "result": "lose",
           "score": "0-0",
-          "league": "K联赛"
+          "league": "K联赛",
+          "hit": "平"
         }
-      ],
-      "result": "lose",
-      "payout": 0,
-      "profit": -16
+      ]
     },
     {
       "id": 32,
