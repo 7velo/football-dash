@@ -995,19 +995,20 @@
       "date": "2026-08-09",
       "type": "2x1",
       "multi": 5,
-      "stake": 20,
+      "stake": 10,
       "matches": [
         {
           "home": "哈马比",
           "away": "赫根",
-          "pick": "平或负",
+          "pick": "让一球负",
           "odds": 2.35,
           "odds2": 2.35,
           "odds3": null,
           "result": "pending",
           "hit": null,
           "score": "",
-          "league": "芬超"
+          "league": "芬超",
+          "handicap": -1
         },
         {
           "home": "库普斯",
@@ -1019,10 +1020,11 @@
           "result": "pending",
           "hit": null,
           "score": "",
-          "league": "芬超"
+          "league": "芬超",
+          "handicap": null
         }
       ],
-      "lastModified": "2026-08-09T11:47:44.176Z"
+      "lastModified": "2026-08-09T11:58:05.274Z"
     }
   ],
   "deletedIds": []
