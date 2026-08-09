@@ -955,6 +955,40 @@
         }
       ],
       "lastModified": "2026-08-09T11:36:30.192Z"
+    },
+    {
+      "id": 34,
+      "date": "2026-08-09",
+      "type": "2x1",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "哥德堡",
+          "away": "卡尔马",
+          "pick": "负",
+          "odds": 2.52,
+          "odds2": 1,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "瑞超"
+        },
+        {
+          "home": "天狼星",
+          "away": "布鲁马波卡纳",
+          "pick": "胜",
+          "odds": 1.21,
+          "odds2": null,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "瑞超"
+        }
+      ],
+      "lastModified": "2026-08-09T11:45:51.837Z"
     }
   ],
   "deletedIds": []
