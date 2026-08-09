@@ -858,8 +858,7 @@
           "result": "win",
           "hit": "胜",
           "score": "4:3",
-          "league": "日职",
-          "_conflict": " 云端#4-3"
+          "league": "日职"
         }
       ]
     },
@@ -934,6 +933,28 @@
         }
       ],
       "lastModified": "2026-08-08T18:30:34.397Z"
+    },
+    {
+      "id": 33,
+      "date": "2026-08-09",
+      "type": "单场固定",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "东京绿茵",
+          "away": "川崎前锋",
+          "pick": "负",
+          "odds": 2.24,
+          "odds2": null,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "日职"
+        }
+      ],
+      "lastModified": "2026-08-09T11:36:30.192Z"
     }
   ],
   "deletedIds": []
