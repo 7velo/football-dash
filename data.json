@@ -1025,6 +1025,39 @@
         }
       ],
       "lastModified": "2026-08-09T11:59:24.109Z"
+    },
+    {
+      "id": 36,
+      "date": "2026-08-10",
+      "type": "2x1",
+      "multi": 3,
+      "stake": 12,
+      "matches": [
+        {
+          "home": "天狼星",
+          "away": "布洛马波卡纳",
+          "pick": "胜",
+          "odds": 1.2,
+          "odds2": null,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "瑞超"
+        },
+        {
+          "home": "韦斯特罗斯",
+          "away": "佐加顿斯",
+          "pick": "平或负",
+          "odds": 3.95,
+          "odds2": 1.56,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "瑞超"
+        }
+      ]
     }
   ]
 }
