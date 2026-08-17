@@ -41,6 +41,7 @@ body{background:#0f172a;color:#e2e8f0}
 <div class="flex gap-2">
 <button onclick="fixGarbledData()" class="btn btn-sm" style="background:#f59e0b;color:black">🔧 修复乱码</button>
 <button onclick="syncToCloud()" class="btn btn-sm" style="background:#eab308;color:white">☁️ 推云端</button>
+<button onclick="autoSettleAll()" class="btn btn-sm" style="background:#22c55e;color:white">⚡ 自动结算</button>
 <button onclick="pullFromCloud()" class="btn btn-sm" style="background:#3b82f6;color:white">📥 从云端拉</button>
 <button onclick="exportData()" class="btn btn-sm" style="background:#334155;color:#94a3b8">📥 导出</button>
 </div>
@@ -1617,6 +1618,112 @@ function addBet(){
   if(localStorage.getItem('gh_sync_token')) setTimeout(syncToCloud,500);
 }
 
+// ===== 自动结算引擎 v1.0 (2026-08-17) =====
+// 前端通过 corsproxy.io 桥接 fotmob API, 对带 matchId 的 pending 票自动拉取比分并结算
+var FOTMOB_PROXY = 'https://corsproxy.io/?url=';
+function fotmobFetch(path, attempt) {
+  attempt = attempt || 0;
+  return fetch(FOTMOB_PROXY + encodeURIComponent('https://www.fotmob.com' + path), { mode: 'cors' })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .catch(function() {
+      if (attempt < 2) {
+        return new Promise(function(res) { setTimeout(res, 1500 * (attempt + 1)); })
+          .then(function() { return fotmobFetch(path, attempt + 1); });
+      }
+      return null;
+    });
+}
+// 从 fotmob matchDetails 提取常规时间比分: {h, a} 或 null
+function fotmobScore(d) {
+  if (!d || !d.header || !d.header.status) return null;
+  if (!d.header.status.finished) return null; // 未完赛不结算
+  var teams = d.header.teams;
+  if (!teams || teams.length < 2) return null;
+  var h = teams[0].score, a = teams[1].score;
+  if (h == null || a == null) return null;
+  return { h: h, a: a };
+}
+// 让球调整: handicap=-1 主让一球 → 主队得分-1; +1 主受一球 → 主队+1
+function applyHandicap(h, a, hc) {
+  if (hc == null || hc === 0) return { h: h, a: a };
+  return { h: h + hc, a: a };
+}
+// 结算单场: 返回 {settled, score, result} 或 null(未到结算时机/无matchId)
+function settleOne(m) {
+  if (m.result !== 'pending' || !m.matchId) return Promise.resolve(null);
+  return fotmobFetch('/api/data/matchDetails?matchId=' + m.matchId)
+    .then(function(d) {
+      var sc = fotmobScore(d);
+      if (!sc) return null;
+      var hc = (m.handicap != null) ? parseInt(m.handicap, 10) : 0;
+      var adj = applyHandicap(sc.h, sc.a, hc);
+      var r = adj.h > adj.a ? '胜' : adj.h < adj.a ? '负' : '平';
+      // hit 格式: 让球票必须与 pick 完全一致(坑32); 普通票=实际赛果
+      var isHcPick = m.pick && m.pick.indexOf('让') === 0;
+      var opts = pickOpts(m);
+      var won = opts.indexOf(r) >= 0 || (isHcPick && opts.indexOf(pickOptsHc(m, r)) >= 0);
+      m.score = sc.h + '-' + sc.a;
+      m.hit = r; // 普通票 hit=赛果; 让球票在下方统一
+      if (isHcPick) {
+        // 让球票 hit 需与 pick 同格式: 实际赛果 r 映射回"让X胜/平/负"
+        var hcLabelMap = { '胜': pickHcLabel(m, '胜'), '平': pickHcLabel(m, '平'), '负': pickHcLabel(m, '负') };
+        m.hit = hcLabelMap[r];
+        won = opts.indexOf(m.hit) >= 0;
+      }
+      m.result = won ? 'win' : 'lose';
+      return { settled: true, score: m.score, result: m.result, hit: m.hit };
+    });
+}
+// 让球票的 pick 与赛果映射: pick="让一球负", 实际赛果 r → "让一球"+r 的语义校验
+function pickHcLabel(m, r) {
+  var hc = (m.handicap != null) ? parseInt(m.handicap, 10) : -1;
+  var prefix = hc < 0 ? '让' + Math.abs(hc) + '球' : '受' + hc + '球';
+  return prefix + r;
+}
+function pickOptsHc(m, r) { return [pickHcLabel(m, r)]; }
+// 全表自动结算: 遍历所有 pending 且有 matchId 的场次, 串行结算, 返回汇总文本
+function autoSettleAll() {
+  return autoSettleRun(true);
+}
+// silent=true 时页面加载自动跑, 不弹 alert, 只在有结算时 console + 提示条
+function autoSettleRun(showAlert) {
+  var targets = [];
+  data.tickets.forEach(function(t) {
+    t.matches.forEach(function(m) {
+      if (m.result === 'pending' && m.matchId) targets.push({ t: t, m: m });
+    });
+  });
+  if (!targets.length) {
+    if (showAlert) alert('⚡ 无可自动结算的场次\n(需要票的场次带 matchId, 且为 pending)');
+    return Promise.resolve(0);
+  }
+  var results = [];
+  var chain = Promise.resolve();
+  targets.forEach(function(tm) {
+    chain = chain.then(function() {
+      return settleOne(tm.m).then(function(r) {
+        if (r) results.push(tm.m.home + ' ' + r.score + ' → ' + (r.result === 'win' ? '✅中' : '❌错') + '(' + r.hit + ')');
+      });
+    });
+  });
+  return chain.then(function() {
+    var settled = results.length;
+    if (settled) {
+      save();
+      render();
+      if (localStorage.getItem('gh_sync_token')) setTimeout(syncToCloud, 500);
+      if (showAlert) {
+        alert('⚡ 自动结算完成 ' + settled + '/' + targets.length + ' 场:\n' + results.join('\n'));
+      } else {
+        console.log('[autoSettle]', results.join(' | '));
+      }
+    } else if (showAlert) {
+      alert('⚡ 检查 ' + targets.length + ' 场, 均未完赛或未到结算时机');
+    }
+    return settled;
+  });
+}
+
 data=loadData();
 data.capital=500;
 migrateHits(); // 历史数据回填命中选项hit（有比分推算/单选标中=选项）
@@ -1627,6 +1734,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   render();
   autoSyncFromCloud();
   startLiveClock();
+  // 自动结算: 页面加载后延迟跑一次(等云端合并完成), 之后每 5 分钟静默检查 pending 票
+  setTimeout(function(){ autoSettleRun(false); }, 5000);
+  setInterval(function(){ autoSettleRun(false); }, 300000);
 });
 </script>
 </body>
