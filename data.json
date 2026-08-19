@@ -1083,9 +1083,9 @@
           "league": "西甲",
           "pick": "胜",
           "odds": 2.07,
-          "hit": null,
-          "score": "",
-          "result": "pending",
+          "hit": "平",
+          "score": "1-1",
+          "result": "lose",
           "matchId": 5868014
         }
       ]
