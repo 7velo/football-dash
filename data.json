@@ -666,9 +666,11 @@
           "away": "马尔默",
           "pick": "负",
           "odds": 2.05,
-          "score": "",
-          "result": "pending",
-          "league": "瑞超"
+          "score": "1-2",
+          "result": "win",
+          "league": "瑞超",
+          "matchId": 5107555,
+          "hit": "负"
         },
         {
           "home": "浦项制铁",
