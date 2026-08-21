@@ -1148,9 +1148,9 @@
           "odds": 2.6,
           "odds2": null,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "win",
+          "hit": "负",
+          "score": "1-2",
           "league": "芬超",
           "matchId": 5147627
         },
@@ -1161,9 +1161,9 @@
           "odds": 1.66,
           "odds2": null,
           "odds3": null,
-          "result": "pending",
-          "hit": null,
-          "score": "",
+          "result": "lose",
+          "hit": "负",
+          "score": "0-3",
           "league": "瑞超",
           "matchId": 5107579
         }
