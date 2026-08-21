@@ -1133,6 +1133,41 @@
           "matchId": 5868029
         }
       ]
+    },
+    {
+      "id": 40,
+      "date": "2026-08-21",
+      "type": "2x1",
+      "multi": 5,
+      "stake": 10,
+      "matches": [
+        {
+          "home": "塞伊奈约基",
+          "away": "拉赫蒂",
+          "pick": "负",
+          "odds": 2.6,
+          "odds2": null,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "芬超",
+          "matchId": null
+        },
+        {
+          "home": "天狼星",
+          "away": "赫根",
+          "pick": "胜",
+          "odds": 1.66,
+          "odds2": null,
+          "odds3": null,
+          "result": "pending",
+          "hit": null,
+          "score": "",
+          "league": "瑞超",
+          "matchId": 5107579
+        }
+      ]
     }
   ],
   "deletedIds": []
