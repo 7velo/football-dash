@@ -662,17 +662,6 @@
       "stake": 20,
       "matches": [
         {
-          "home": "布鲁马波卡纳",
-          "away": "马尔默",
-          "pick": "负",
-          "odds": 2.05,
-          "score": "1-2",
-          "result": "win",
-          "league": "瑞超",
-          "matchId": 5107555,
-          "hit": "负"
-        },
-        {
           "home": "浦项制铁",
           "away": "金泉尚武",
           "pick": "负",
@@ -682,7 +671,8 @@
           "league": "韩职",
           "hit": "负"
         }
-      ]
+      ],
+      "lastModified": "2026-08-23T08:45:19.000Z"
     },
     {
       "id": 23,
