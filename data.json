@@ -1153,9 +1153,10 @@
           "pick": "负",
           "odds": 1.77,
           "matchId": 5802902,
-          "result": "pending",
-          "score": "",
-          "kickoff": "2026-08-23 23:15"
+          "result": "win",
+          "score": "0-1",
+          "kickoff": "2026-08-23 23:15",
+          "hit": "负"
         }
       ],
       "lastModified": "2026-08-23T07:02:53.000Z"
@@ -1199,9 +1200,10 @@
           "pick": "胜",
           "odds": 1.98,
           "matchId": 5868026,
-          "result": "pending",
-          "score": "",
-          "kickoff": "2026-08-24 01:30"
+          "result": "win",
+          "score": "1-0",
+          "kickoff": "2026-08-24 01:30",
+          "hit": "胜"
         }
       ],
       "lastModified": "2026-08-23T07:02:53.000Z"
@@ -1242,9 +1244,10 @@
           "pick": "负",
           "odds": 1.74,
           "matchId": 5795371,
-          "result": "pending",
-          "score": "",
-          "kickoff": "2026-08-23 23:30"
+          "result": "lose",
+          "score": "2-2",
+          "kickoff": "2026-08-23 23:30",
+          "hit": "平"
         }
       ],
       "lastModified": "2026-08-23T07:02:53.000Z"
