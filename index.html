@@ -138,11 +138,11 @@ body{background:#0f172a;color:#e2e8f0}
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-<div class="card"><canvas id="pnlChart" height="400"></canvas></div>
+<div class="card lg:col-span-2"><div style="position:relative;height:420px"><canvas id="pnlChart"></canvas></div></div>
 
-<div class="card"><canvas id="typeChart" height="280"></canvas></div>
+<div class="card"><div style="position:relative;height:420px"><canvas id="typeChart"></canvas></div></div>
 
-<div class="card lg:col-span-2"><div class="stat-label mb-2">🏆 联赛盈亏排行</div><div style="position:relative;height:300px"><canvas id="leagueChart"></canvas></div></div>
+<div class="card"><div style="position:relative;height:420px"><canvas id="leagueChart"></canvas></div></div>
 
 </div>
 
@@ -2907,6 +2907,8 @@ function renderCharts(s) {
       plugins: {
 
         legend: { display: false },
+
+        title: { display: true, text: '📈 累计盈亏走势(逐日)', color: '#e2e8f0' },
 
         tooltip: {
 
