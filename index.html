@@ -1760,9 +1760,9 @@ function autoSyncFromCloud() {
 
     if (cloud && Array.isArray(cloud.tickets) && cloud.tickets.length > 0) {
 
-      var res = applyMerged(cloud);
-
       CLOUD_READY = true;
+
+      var res = applyMerged(cloud);
 
       if(res.conflicts.length) alert('⚠️ 合并冲突(本地为准):\n' + res.conflicts.join('\n'));
 
@@ -1782,9 +1782,9 @@ function autoSyncFromCloud() {
 
       if (cloud && Array.isArray(cloud.tickets) && cloud.tickets.length > 0) {
 
-        var res = applyMerged(cloud);
-
         CLOUD_READY = true;
+
+        var res = applyMerged(cloud);
 
         if(res.conflicts.length) alert('⚠️ 合并冲突(本地为准):\n' + res.conflicts.join('\n'));
 
@@ -1792,7 +1792,7 @@ function autoSyncFromCloud() {
 
     })
 
-    .catch(function(e2) { CLOUD_READY = true; /* 双通道都失败：保留本地数据，不打扰用户 */ });
+    .catch(function(e2) { CLOUD_READY = true; render(); /* 双通道都失败：保留本地数据，不打扰用户 */ });
 
   });
 
