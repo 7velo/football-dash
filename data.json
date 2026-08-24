@@ -1276,8 +1276,8 @@
       "id": 47,
       "date": "2026-08-24",
       "type": "2x1",
-      "multi": 5,
-      "stake": 20,
+      "multi": 2.5,
+      "stake": 10,
       "matches": [
         {
           "home": "博洛尼亚",
@@ -1306,8 +1306,7 @@
           "matchId": 5749640
         }
       ],
-      "lastModified": "2026-08-25T06:15:00.000Z",
-      "result": "lose"
+      "lastModified": "2026-08-25T06:15:00.000Z"
     },
     {
       "id": 48,
@@ -1330,8 +1329,7 @@
           "matchId": 5749640
         }
       ],
-      "lastModified": "2026-08-25T06:15:00.000Z",
-      "result": "win"
+      "lastModified": "2026-08-25T06:15:00.000Z"
     },
     {
       "id": 49,
@@ -1354,8 +1352,7 @@
           "matchId": 5795372
         }
       ],
-      "lastModified": "2026-08-25T06:15:00.000Z",
-      "result": "win"
+      "lastModified": "2026-08-25T06:15:00.000Z"
     },
     {
       "id": 50,
@@ -1417,8 +1414,7 @@
           "matchId": 5795372
         }
       ],
-      "lastModified": "2026-08-25T06:15:00.000Z",
-      "result": "lose"
+      "lastModified": "2026-08-25T06:15:00.000Z"
     }
   ],
   "deletedIds": [
