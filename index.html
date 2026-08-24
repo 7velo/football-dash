@@ -2186,6 +2186,20 @@ function calcPayout(t, w) {
 
 }
 
+// 待赛最低预计收益：已定hit的场用命中赔率，未定场取最低赔率（保守下限）
+function minPayout(t) {
+  var prod = 1;
+  t.matches.forEach(function(m) {
+    if (m.hit) { prod *= optOdds(m, m.hit); }
+    else {
+      var opts = pickOpts(m);
+      var minOdd = Math.min.apply(null, opts.map(function(o) { return optOdds(m, o) || m.odds; }));
+      prod *= minOdd;
+    }
+  });
+  return Math.round(prod * 2 * t.multi);
+}
+
 // 待赛最高预计收益：已定hit的场用命中赔率，未定场取最高赔率（乐观上限）
 
 function maxPayout(t) {
@@ -3273,7 +3287,11 @@ function renderLatestBets(s) {
   var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">' +
     '<tr style="background:#334155;color:#94a3b8;font-size:12px"><th style="padding:8px 10px;text-align:center">开球(BJT)</th><th style="padding:8px 10px;text-align:left">比赛</th><th style="padding:8px 10px;text-align:center">投注</th><th style="padding:8px 10px;text-align:center">金额</th><th style="padding:8px 10px;text-align:center">状态</th><th style="padding:8px 10px;text-align:right">预计收益</th></tr>' +
     sorted.map(function(t) {
+      var minPay = minPayout(t);
       var maxPay = maxPayout(t);
+      var expStr = (minPay === maxPay)
+        ? (maxPay - t.stake >= 0 ? '+' : '') + (maxPay - t.stake) + '元'
+        : (minPay - t.stake >= 0 ? '+' : '') + (minPay - t.stake) + ' ~ ' + (maxPay - t.stake >= 0 ? '+' : '') + (maxPay - t.stake) + '元';
       return '<tr style="border-bottom:1px solid #1e293b;font-size:13px">' +
         '<td style="padding:8px 10px;text-align:center;color:#eab308;font-weight:600;white-space:nowrap">' + (koOf(t).slice(5).replace('99:99','')) + '</td>' +
         '<td style="padding:8px 10px;text-align:left">' + t.matches.map(function(m) {
@@ -3283,7 +3301,7 @@ function renderLatestBets(s) {
         '<td style="padding:8px 10px;text-align:center">' + t.matches.map(function(m) { return m.pick + ' <span style="color:#94a3b8;font-size:11px">@' + oddsStr(m) + '</span>'; }).join('<br>') + '</td>' +
         '<td style="padding:8px 10px;text-align:center;color:#94a3b8">' + t.stake + '元</td>' +
         '<td style="padding:8px 10px;text-align:center"><span class="chip chip-pending">⏳待赛</span></td>' +
-        '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#f59e0b">' + (maxPay - t.stake >= 0 ? '+' : '') + (maxPay - t.stake) + '元</td>' +
+        '<td style="padding:8px 10px;text-align:right;font-weight:700;color:#f59e0b">' + expStr + '</td>' +
         '</tr>';
     }).join('') +
     '</table></div>';
