@@ -1358,8 +1358,8 @@
       "id": 50,
       "date": "2026-08-24",
       "type": "4x1",
-      "multi": 2,
-      "stake": 8,
+      "multi": 4,
+      "stake": 16,
       "matches": [
         {
           "home": "博洛尼亚",
@@ -1414,7 +1414,7 @@
           "matchId": 5795372
         }
       ],
-      "lastModified": "2026-08-24T20:00:00.000Z"
+      "lastModified": "2026-08-24T20:20:00.000Z"
     }
   ],
   "deletedIds": [
