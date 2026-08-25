@@ -1,0 +1,14 @@
+{
+  "name": "竞彩记账看板",
+  "short_name": "竞彩看板",
+  "description": "竞彩投注记账 · 选当天比赛记注 · 自动同步",
+  "start_url": "/football-dash/",
+  "scope": "/football-dash/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/football-dash/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/football-dash/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
