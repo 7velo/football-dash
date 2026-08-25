@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-08-25T19:04:00+08:00",
+  "korean_unavailable": false,
+  "matches": [
+    {
+      "matchId": "401882917",
+      "league": "esp.1",
+      "league_cn": "西甲",
+      "kickoff": "2026-08-26T03:00:00+08:00",
+      "home": "Valencia",
+      "away": "Real Betis",
+      "score_home": 0,
+      "score_away": 0,
+      "status": "pre"
+    },
+    {
+      "matchId": "2416528",
+      "league": "kor.1",
+      "league_cn": "韩职",
+      "kickoff": "2026-08-26T18:30:00+08:00",
+      "home": "FC Anyang",
+      "away": "Incheon United",
+      "score_home": null,
+      "score_away": null,
+      "status": "pre"
+    },
+    {
+      "matchId": "401882919",
+      "league": "esp.1",
+      "league_cn": "西甲",
+      "kickoff": "2026-08-27T03:00:00+08:00",
+      "home": "Real Madrid",
+      "away": "Real Sociedad",
+      "score_home": 0,
+      "score_away": 0,
+      "status": "pre"
+    }
+  ]
+}
